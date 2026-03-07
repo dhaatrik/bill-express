@@ -56,11 +56,6 @@ Ensure you have the following installed on your local machine:
    ```
    This command starts the backend Express server alongside the Vite frontend development server at `http://localhost:3000`.
 
-## Environment Variables
-The application requires the following environment variables. Set them in your `.env` file:
-- `GEMINI_API_KEY`: Required for Gemini AI API calls.
-- `APP_URL`: The URL where this application is hosted (e.g., `http://localhost:3000`).
-
 ## Usage Examples
 
 **1. Creating a Product (API)**
