@@ -122,13 +122,14 @@ const sampleProducts = [
   { code: 'CORA18', name: 'Coragen 18.5% SC', category: 'Pesticide', unit: 'ml', price: 1850.00, gst: 18, hsn: '38089199' }
 ];
 
-const check = db.prepare('SELECT count(*) as c FROM products WHERE code = ?');
-const insert = db.prepare('INSERT INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+const insert = db.prepare('INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
-for (const p of sampleProducts) {
-  if ((check.get(p.code) as any).c === 0) {
+const insertMany = db.transaction((products: any[]) => {
+  for (const p of products) {
     insert.run(p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn, 100); // Default stock 100
   }
-}
+});
+
+insertMany(sampleProducts);
 
 export default db;
