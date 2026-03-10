@@ -29,7 +29,7 @@ async function startServer() {
       const info = stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0);
       res.json({ id: info.lastInsertRowid });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -44,7 +44,7 @@ async function startServer() {
       stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0, req.params.id);
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -53,7 +53,7 @@ async function startServer() {
       db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -92,7 +92,7 @@ async function startServer() {
       const info = stmt.run(name, mobile, address, gstin, state);
       res.json({ id: info.lastInsertRowid });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -107,7 +107,7 @@ async function startServer() {
       stmt.run(name, mobile, address, gstin, state, req.params.id);
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -199,7 +199,7 @@ async function startServer() {
 
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -227,7 +227,12 @@ async function startServer() {
       })();
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      // Allow specific error message for "Invoice not found or already cancelled"
+      if (err.message === 'Invoice not found or already cancelled') {
+        res.status(400).json({ error: err.message });
+      } else {
+        res.status(400).json({ error: 'An error occurred while processing the request' });
+      }
     }
   });
 
@@ -238,7 +243,7 @@ async function startServer() {
         .run(payment_status, amount_paid, req.params.id);
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -258,7 +263,7 @@ async function startServer() {
       `).run(store_name, address, phone, gstin, state_code, logo_url);
       res.json({ success: true });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -296,7 +301,7 @@ async function startServer() {
 
       res.json({ last7Days, topProducts, lowStock });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
