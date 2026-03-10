@@ -8,6 +8,34 @@ async function startServer() {
 
   app.use(express.json());
 
+
+  // Authentication Middleware
+  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const authHeader = req.headers.authorization || '';
+    const match = authHeader.match(/^Basic (.+)$/);
+    if (!match) {
+      res.set('WWW-Authenticate', 'Basic realm="API"');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const [login, password] = Buffer.from(match[1], 'base64').toString().split(':');
+
+    // Use environment variables for credentials, with fallbacks for development
+    const expectedUsername = process.env.ADMIN_USERNAME || 'admin';
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (login === expectedUsername && password === expectedPassword) {
+      return next();
+    }
+
+    res.set('WWW-Authenticate', 'Basic realm="API"');
+    return res.status(401).json({ error: 'Invalid credentials' });
+  };
+
+  app.use('/api', (req, res, next) => {
+    return requireAuth(req, res, next);
+  });
+
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });

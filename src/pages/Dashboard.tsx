@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Receipt, TrendingUp, Package, Users, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { apiFetch } from '../utils/api.js';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -18,7 +19,7 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    fetch('/api/invoices')
+    apiFetch('/api/invoices')
       .then(res => res.json())
       .then(data => {
         const today = new Date().toISOString().split('T')[0];
@@ -28,15 +29,15 @@ export default function Dashboard() {
         setStats(s => ({ ...s, todayInvoices: todayInvoices.length, todaySales }));
       });
       
-    fetch('/api/products')
+    apiFetch('/api/products')
       .then(res => res.json())
       .then(data => setStats(s => ({ ...s, totalProducts: data.length })));
       
-    fetch('/api/customers')
+    apiFetch('/api/customers')
       .then(res => res.json())
       .then(data => setStats(s => ({ ...s, totalCustomers: data.length })));
       
-    fetch('/api/dashboard/analytics')
+    apiFetch('/api/dashboard/analytics')
       .then(res => res.json())
       .then(data => setAnalytics(data));
   }, []);
