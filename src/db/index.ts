@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const dbPath = path.resolve(process.cwd(), 'data.db');
+const dbPath = process.env.NODE_ENV === 'test' ? ':memory:' : path.resolve(process.cwd(), 'data.db');
 const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');
@@ -102,7 +102,7 @@ if (settingsCount.c === 0) {
   );
 }
 
-// Insert some default products if empty
+// Seed some default products if empty
 const sampleProducts = [
   { code: 'UR46', name: 'Urea 46%', category: 'Fertilizer', unit: 'Bag', price: 250.00, gst: 5, hsn: '31021000' },
   { code: 'MONO36', name: 'Monocrotophos 36% SL', category: 'Pesticide', unit: 'Litre', price: 450.00, gst: 18, hsn: '38089199' },
@@ -122,13 +122,14 @@ const sampleProducts = [
   { code: 'CORA18', name: 'Coragen 18.5% SC', category: 'Pesticide', unit: 'ml', price: 1850.00, gst: 18, hsn: '38089199' }
 ];
 
-const check = db.prepare('SELECT count(*) as c FROM products WHERE code = ?');
-const insert = db.prepare('INSERT INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+const insert = db.prepare('INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
-for (const p of sampleProducts) {
-  if ((check.get(p.code) as any).c === 0) {
+const insertMany = db.transaction((products: any[]) => {
+  for (const p of products) {
     insert.run(p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn, 100); // Default stock 100
   }
-}
+});
+
+insertMany(sampleProducts);
 
 export default db;

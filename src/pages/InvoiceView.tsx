@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Printer, ArrowLeft, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { toWords } from 'number-to-words';
+import { apiFetch } from '../utils/api.js';
 
 export default function InvoiceView() {
   const { id } = useParams();
@@ -11,11 +12,11 @@ export default function InvoiceView() {
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`/api/invoices/${id}`)
+    apiFetch(`/api/invoices/${id}`)
       .then(res => res.json())
       .then(data => setInvoice(data));
       
-    fetch('/api/settings')
+    apiFetch('/api/settings')
       .then(res => res.json())
       .then(data => setSettings(data));
   }, [id]);

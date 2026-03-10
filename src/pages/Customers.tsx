@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Edit2, Save, X, Download } from 'lucide-react';
+import { apiFetch } from '../utils/api.js';
 
 export default function Customers() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -12,7 +13,7 @@ export default function Customers() {
   }, []);
 
   const fetchCustomers = () => {
-    fetch('/api/customers')
+    apiFetch('/api/customers')
       .then(res => res.json())
       .then(data => setCustomers(data));
   };
@@ -24,7 +25,7 @@ export default function Customers() {
 
   const handleSave = async () => {
     try {
-      await fetch(`/api/customers/${editingId}`, {
+      await apiFetch(`/api/customers/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)

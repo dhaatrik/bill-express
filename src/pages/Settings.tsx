@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
+import { apiFetch } from '../utils/api.js';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -12,7 +13,7 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    fetch('/api/settings')
+    apiFetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         if (data) setSettings(data);
@@ -22,7 +23,7 @@ export default function Settings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('/api/settings', {
+      await apiFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
