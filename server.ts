@@ -275,12 +275,13 @@ async function startServer() {
     });
   }
 
-  const host = process.env.HOST || '127.0.0.1';
-  app.listen(PORT, host, () => {
-    console.log(`Server running on http://${host}:${PORT}`);
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+
+  return app;
 }
 
-if (process.env.NODE_ENV !== 'test') {
-  startServer();
-}
+export const appPromise = startServer();
