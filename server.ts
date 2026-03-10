@@ -1,6 +1,6 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import db from './src/db/index.js';
+import logger from './src/utils/logger.js';
 
 export const app = express();
 
@@ -19,6 +19,11 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
+    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
+        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
+        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         INSERT INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock)
@@ -33,6 +38,11 @@ app.post('/api/products', (req, res) => {
 
 app.put('/api/products/:id', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
+    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
+        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
+        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         UPDATE products 
@@ -144,57 +154,7 @@ app.post('/api/invoices', (req, res) => {
     } = req.body;
 
     try {
-      db.transaction(() => {
-        let finalCustomerId = customer_id;
-        
-        // Create customer if it's a new B2B or Cash with details
-        if (!finalCustomerId && customer_name) {
-          const stmt = db.prepare('INSERT INTO customers (name, mobile, address, gstin, state) VALUES (?, ?, ?, ?, ?)');
-          const info = stmt.run(customer_name, customer_mobile || null, customer_address || null, customer_gstin || null, customer_state || null);
-          finalCustomerId = info.lastInsertRowid;
-        }
-
-        // Generate Invoice Number (RAC/YYYY-YY/XXXXX)
-        const currentYear = new Date().getFullYear();
-        const nextYear = (currentYear + 1).toString().slice(-2);
-        const prefix = `RAC/${currentYear}-${nextYear}/`;
-        
-        const lastInvoice = db.prepare("SELECT invoice_number FROM invoices WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1").get(`${prefix}%`) as { invoice_number: string } | undefined;
-        
-        let nextNumber = 1;
-        if (lastInvoice) {
-          const parts = lastInvoice.invoice_number.split('/');
-          nextNumber = parseInt(parts[parts.length - 1], 10) + 1;
-        }
-        const invoice_number = `${prefix}${nextNumber.toString().padStart(5, '0')}`;
-
-        const stmt = db.prepare(`
-          INSERT INTO invoices (invoice_number, customer_id, type, subtotal, discount, cgst_total, sgst_total, igst_total, grand_total, payment_status, amount_paid)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        const info = stmt.run(invoice_number, finalCustomerId || null, type, subtotal, discount, cgst_total, sgst_total, igst_total || 0, grand_total, payment_status || 'Paid', amount_paid || grand_total);
-        const invoiceId = info.lastInsertRowid;
-
-        const itemStmt = db.prepare(`
-          INSERT INTO invoice_items (invoice_id, product_id, product_name, product_code, hsn_code, unit, quantity, price_ex_gst, gst_rate, cgst_amount, sgst_amount, igst_amount, total)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        
-        const updateStockStmt = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
-
-        for (const item of items) {
-          itemStmt.run(
-            invoiceId, item.product_id, item.product_name, item.product_code, item.hsn_code, item.unit,
-            item.quantity, item.price_ex_gst, item.gst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount || 0, item.total
-          );
-          if (item.product_id) {
-            updateStockStmt.run(item.quantity, item.product_id);
-          }
-        }
-
-        return invoiceId;
-      })();
-
+      createInvoiceTransaction(req.body);
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
@@ -315,8 +275,9 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const host = process.env.HOST || '127.0.0.1';
+  app.listen(PORT, host, () => {
+    console.log(`Server running on http://${host}:${PORT}`);
   });
 }
 
