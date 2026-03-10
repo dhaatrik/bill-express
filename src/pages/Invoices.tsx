@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { apiFetch } from '../utils/api.js';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
@@ -14,7 +15,7 @@ export default function Invoices() {
   }, []);
 
   const fetchInvoices = () => {
-    fetch('/api/invoices')
+    apiFetch('/api/invoices')
       .then(res => res.json())
       .then(data => setInvoices(data));
   };
@@ -22,7 +23,7 @@ export default function Invoices() {
   const handleCancel = async (id: number) => {
     if (confirm('Are you sure you want to void this invoice? This will restore stock and mark it as cancelled.')) {
       try {
-        await fetch(`/api/invoices/${id}/cancel`, { method: 'PUT' });
+        await apiFetch(`/api/invoices/${id}/cancel`, { method: 'PUT' });
         fetchInvoices();
       } catch (err) {
         alert('Failed to cancel invoice');
@@ -37,7 +38,7 @@ export default function Invoices() {
       if (!isNaN(parsedAmount)) {
         const status = parsedAmount >= total ? 'Paid' : parsedAmount > 0 ? 'Partial' : 'Unpaid';
         try {
-          await fetch(`/api/invoices/${id}/payment`, {
+          await apiFetch(`/api/invoices/${id}/payment`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ payment_status: status, amount_paid: parsedAmount })

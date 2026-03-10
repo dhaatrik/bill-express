@@ -1,12 +1,38 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import db from './src/db/index.js';
+import logger from './src/utils/logger.js';
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
 
-  app.use(express.json());
+app.use(express.json());
+
+
+  // Authentication Middleware
+  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const authHeader = req.headers.authorization || '';
+    const match = authHeader.match(/^Basic (.+)$/);
+    if (!match) {
+      res.set('WWW-Authenticate', 'Basic realm="API"');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const [login, password] = Buffer.from(match[1], 'base64').toString().split(':');
+
+    // Use environment variables for credentials, with fallbacks for development
+    const expectedUsername = process.env.ADMIN_USERNAME || 'admin';
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (login === expectedUsername && password === expectedPassword) {
+      return next();
+    }
+
+    res.set('WWW-Authenticate', 'Basic realm="API"');
+    return res.status(401).json({ error: 'Invalid credentials' });
+  };
+
+  app.use('/api', (req, res, next) => {
+    return requireAuth(req, res, next);
+  });
 
   // API Routes
   app.get('/api/health', (req, res) => {
@@ -14,13 +40,18 @@ async function startServer() {
   });
 
   // Products
-  app.get('/api/products', (req, res) => {
+app.get('/api/products', (req, res) => {
     const products = db.prepare('SELECT * FROM products ORDER BY name ASC').all();
     res.json(products);
   });
 
-  app.post('/api/products', (req, res) => {
+app.post('/api/products', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
+    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
+        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
+        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         INSERT INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock)
@@ -33,8 +64,13 @@ async function startServer() {
     }
   });
 
-  app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
+    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
+        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
+        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         UPDATE products 
@@ -48,7 +84,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', (req, res) => {
     try {
       db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
       res.json({ success: true });
@@ -58,7 +94,7 @@ async function startServer() {
   });
 
   // Customers
-  app.get('/api/customers', (req, res) => {
+app.get('/api/customers', (req, res) => {
     const search = req.query.search as string;
     if (search) {
       const customers = db.prepare(`
@@ -82,7 +118,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/customers', (req, res) => {
+app.post('/api/customers', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
     try {
       const stmt = db.prepare(`
@@ -96,7 +132,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/customers/:id', (req, res) => {
+app.put('/api/customers/:id', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
     try {
       const stmt = db.prepare(`
@@ -112,7 +148,7 @@ async function startServer() {
   });
 
   // Invoices
-  app.get('/api/invoices', (req, res) => {
+app.get('/api/invoices', (req, res) => {
     const invoices = db.prepare(`
       SELECT i.*, c.name as customer_name, c.mobile as customer_mobile
       FROM invoices i
@@ -122,7 +158,7 @@ async function startServer() {
     res.json(invoices);
   });
 
-  app.get('/api/invoices/:id', (req, res) => {
+app.get('/api/invoices/:id', (req, res) => {
     const invoice = db.prepare(`
       SELECT i.*, c.name as customer_name, c.mobile as customer_mobile, c.address as customer_address, c.gstin as customer_gstin, c.state as customer_state
       FROM invoices i
@@ -138,7 +174,7 @@ async function startServer() {
     res.json({ ...invoice, items });
   });
 
-  app.post('/api/invoices', (req, res) => {
+app.post('/api/invoices', (req, res) => {
     const { 
       customer_id, type, subtotal, discount, cgst_total, sgst_total, igst_total, grand_total, items,
       customer_name, customer_mobile, customer_address, customer_gstin, customer_state,
@@ -146,64 +182,14 @@ async function startServer() {
     } = req.body;
 
     try {
-      db.transaction(() => {
-        let finalCustomerId = customer_id;
-        
-        // Create customer if it's a new B2B or Cash with details
-        if (!finalCustomerId && customer_name) {
-          const stmt = db.prepare('INSERT INTO customers (name, mobile, address, gstin, state) VALUES (?, ?, ?, ?, ?)');
-          const info = stmt.run(customer_name, customer_mobile || null, customer_address || null, customer_gstin || null, customer_state || null);
-          finalCustomerId = info.lastInsertRowid;
-        }
-
-        // Generate Invoice Number (RAC/YYYY-YY/XXXXX)
-        const currentYear = new Date().getFullYear();
-        const nextYear = (currentYear + 1).toString().slice(-2);
-        const prefix = `RAC/${currentYear}-${nextYear}/`;
-        
-        const lastInvoice = db.prepare("SELECT invoice_number FROM invoices WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1").get(`${prefix}%`) as { invoice_number: string } | undefined;
-        
-        let nextNumber = 1;
-        if (lastInvoice) {
-          const parts = lastInvoice.invoice_number.split('/');
-          nextNumber = parseInt(parts[parts.length - 1], 10) + 1;
-        }
-        const invoice_number = `${prefix}${nextNumber.toString().padStart(5, '0')}`;
-
-        const stmt = db.prepare(`
-          INSERT INTO invoices (invoice_number, customer_id, type, subtotal, discount, cgst_total, sgst_total, igst_total, grand_total, payment_status, amount_paid)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        const info = stmt.run(invoice_number, finalCustomerId || null, type, subtotal, discount, cgst_total, sgst_total, igst_total || 0, grand_total, payment_status || 'Paid', amount_paid || grand_total);
-        const invoiceId = info.lastInsertRowid;
-
-        const itemStmt = db.prepare(`
-          INSERT INTO invoice_items (invoice_id, product_id, product_name, product_code, hsn_code, unit, quantity, price_ex_gst, gst_rate, cgst_amount, sgst_amount, igst_amount, total)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        
-        const updateStockStmt = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
-
-        for (const item of items) {
-          itemStmt.run(
-            invoiceId, item.product_id, item.product_name, item.product_code, item.hsn_code, item.unit,
-            item.quantity, item.price_ex_gst, item.gst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount || 0, item.total
-          );
-          if (item.product_id) {
-            updateStockStmt.run(item.quantity, item.product_id);
-          }
-        }
-
-        return invoiceId;
-      })();
-
+      createInvoiceTransaction(req.body);
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
-  app.put('/api/invoices/:id/cancel', (req, res) => {
+app.put('/api/invoices/:id/cancel', (req, res) => {
     try {
       db.transaction(() => {
         const invoiceId = req.params.id;
@@ -236,7 +222,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/invoices/:id/payment', (req, res) => {
+app.put('/api/invoices/:id/payment', (req, res) => {
     const { payment_status, amount_paid } = req.body;
     try {
       db.prepare('UPDATE invoices SET payment_status = ?, amount_paid = ? WHERE id = ?')
@@ -248,12 +234,12 @@ async function startServer() {
   });
 
   // Settings
-  app.get('/api/settings', (req, res) => {
+app.get('/api/settings', (req, res) => {
     const settings = db.prepare('SELECT * FROM settings LIMIT 1').get();
     res.json(settings);
   });
 
-  app.put('/api/settings', (req, res) => {
+app.put('/api/settings', (req, res) => {
     const { store_name, address, phone, gstin, state_code, logo_url } = req.body;
     try {
       db.prepare(`
@@ -268,7 +254,7 @@ async function startServer() {
   });
 
   // Dashboard Analytics
-  app.get('/api/dashboard/analytics', (req, res) => {
+app.get('/api/dashboard/analytics', (req, res) => {
     try {
       // Sales over last 7 days
       const last7Days = db.prepare(`
@@ -305,23 +291,30 @@ async function startServer() {
     }
   });
 
+async function startServer() {
+  const PORT = 3000;
+
   // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (process.env.NODE_ENV === 'production') {
     app.use(express.static('dist'));
     app.get('*', (req, res) => {
       res.sendFile('dist/index.html', { root: '.' });
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+
+  return app;
 }
 
-startServer();
+export const appPromise = startServer();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Trash2 } from 'lucide-react';
+import { apiFetch } from '../utils/api.js';
 
 export default function NewBill() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function NewBill() {
   const [amountPaid, setAmountPaid] = useState<string>('');
 
   useEffect(() => {
-    fetch('/api/products')
+    apiFetch('/api/products')
       .then(res => res.json())
       .then(data => setProducts(data));
   }, []);
@@ -156,7 +157,7 @@ export default function NewBill() {
     };
 
     try {
-      const res = await fetch('/api/invoices', {
+      const res = await apiFetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
