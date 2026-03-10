@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const dbPath = path.resolve(process.cwd(), 'data.db');
+const dbPath = process.env.NODE_ENV === 'test' ? ':memory:' : path.resolve(process.cwd(), 'data.db');
 const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');
@@ -102,7 +102,7 @@ if (settingsCount.c === 0) {
   );
 }
 
-// Insert some default products if empty
+// Seed some default products if empty
 const sampleProducts = [
   { code: 'UR46', name: 'Urea 46%', category: 'Fertilizer', unit: 'Bag', price: 250.00, gst: 5, hsn: '31021000' },
   { code: 'MONO36', name: 'Monocrotophos 36% SL', category: 'Pesticide', unit: 'Litre', price: 450.00, gst: 18, hsn: '38089199' },
