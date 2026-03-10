@@ -21,6 +21,11 @@ async function startServer() {
 
   app.post('/api/products', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
+    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
+        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
+        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         INSERT INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock)
@@ -35,6 +40,11 @@ async function startServer() {
 
   app.put('/api/products/:id', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
+    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
+        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
+        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         UPDATE products 
