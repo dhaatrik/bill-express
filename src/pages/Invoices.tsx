@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Search, Download, XCircle, CheckCircle } from 'lucide-react';
+import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Invoices() {
