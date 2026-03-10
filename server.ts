@@ -2,24 +2,22 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import db from './src/db/index.js';
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
 
-  app.use(express.json());
+app.use(express.json());
 
-  // API Routes
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
-  });
+// API Routes
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
   // Products
-  app.get('/api/products', (req, res) => {
+app.get('/api/products', (req, res) => {
     const products = db.prepare('SELECT * FROM products ORDER BY name ASC').all();
     res.json(products);
   });
 
-  app.post('/api/products', (req, res) => {
+app.post('/api/products', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
     try {
       const stmt = db.prepare(`
@@ -33,7 +31,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
     try {
       const stmt = db.prepare(`
@@ -48,7 +46,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', (req, res) => {
     try {
       db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
       res.json({ success: true });
@@ -58,7 +56,7 @@ async function startServer() {
   });
 
   // Customers
-  app.get('/api/customers', (req, res) => {
+app.get('/api/customers', (req, res) => {
     const search = req.query.search as string;
     if (search) {
       const customers = db.prepare(`
@@ -82,7 +80,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/customers', (req, res) => {
+app.post('/api/customers', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
     try {
       const stmt = db.prepare(`
@@ -96,7 +94,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/customers/:id', (req, res) => {
+app.put('/api/customers/:id', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
     try {
       const stmt = db.prepare(`
@@ -112,7 +110,7 @@ async function startServer() {
   });
 
   // Invoices
-  app.get('/api/invoices', (req, res) => {
+app.get('/api/invoices', (req, res) => {
     const invoices = db.prepare(`
       SELECT i.*, c.name as customer_name, c.mobile as customer_mobile
       FROM invoices i
@@ -122,7 +120,7 @@ async function startServer() {
     res.json(invoices);
   });
 
-  app.get('/api/invoices/:id', (req, res) => {
+app.get('/api/invoices/:id', (req, res) => {
     const invoice = db.prepare(`
       SELECT i.*, c.name as customer_name, c.mobile as customer_mobile, c.address as customer_address, c.gstin as customer_gstin, c.state as customer_state
       FROM invoices i
@@ -138,7 +136,7 @@ async function startServer() {
     res.json({ ...invoice, items });
   });
 
-  app.post('/api/invoices', (req, res) => {
+app.post('/api/invoices', (req, res) => {
     const { 
       customer_id, type, subtotal, discount, cgst_total, sgst_total, igst_total, grand_total, items,
       customer_name, customer_mobile, customer_address, customer_gstin, customer_state,
@@ -203,7 +201,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/invoices/:id/cancel', (req, res) => {
+app.put('/api/invoices/:id/cancel', (req, res) => {
     try {
       db.transaction(() => {
         const invoiceId = req.params.id;
@@ -231,7 +229,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/invoices/:id/payment', (req, res) => {
+app.put('/api/invoices/:id/payment', (req, res) => {
     const { payment_status, amount_paid } = req.body;
     try {
       db.prepare('UPDATE invoices SET payment_status = ?, amount_paid = ? WHERE id = ?')
@@ -243,12 +241,12 @@ async function startServer() {
   });
 
   // Settings
-  app.get('/api/settings', (req, res) => {
+app.get('/api/settings', (req, res) => {
     const settings = db.prepare('SELECT * FROM settings LIMIT 1').get();
     res.json(settings);
   });
 
-  app.put('/api/settings', (req, res) => {
+app.put('/api/settings', (req, res) => {
     const { store_name, address, phone, gstin, state_code, logo_url } = req.body;
     try {
       db.prepare(`
@@ -263,7 +261,7 @@ async function startServer() {
   });
 
   // Dashboard Analytics
-  app.get('/api/dashboard/analytics', (req, res) => {
+app.get('/api/dashboard/analytics', (req, res) => {
     try {
       // Sales over last 7 days
       const last7Days = db.prepare(`
@@ -300,14 +298,17 @@ async function startServer() {
     }
   });
 
+async function startServer() {
+  const PORT = 3000;
+
   // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (process.env.NODE_ENV === 'production') {
     app.use(express.static('dist'));
     app.get('*', (req, res) => {
       res.sendFile('dist/index.html', { root: '.' });
@@ -319,4 +320,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
