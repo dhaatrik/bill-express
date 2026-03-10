@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Download } from 'lucide-react';
-import { apiFetch } from '../utils/api.js';
+import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown } from 'lucide-react';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
