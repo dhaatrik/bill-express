@@ -200,13 +200,17 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
         }
 
         // Restore stock
-        const items = db.prepare('SELECT product_id, quantity FROM invoice_items WHERE invoice_id = ?').all(invoiceId) as any[];
-        const updateStockStmt = db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
-        for (const item of items) {
-          if (item.product_id) {
-            updateStockStmt.run(item.quantity, item.product_id);
-          }
-        }
+        db.prepare(`
+          UPDATE products
+          SET stock = products.stock + items.total_qty
+          FROM (
+            SELECT product_id, SUM(quantity) as total_qty
+            FROM invoice_items
+            WHERE invoice_id = ?
+            GROUP BY product_id
+          ) AS items
+          WHERE products.id = items.product_id
+        `).run(invoiceId);
 
         // Mark as cancelled
         db.prepare("UPDATE invoices SET status = 'cancelled' WHERE id = ?").run(invoiceId);
