@@ -25,7 +25,10 @@ export default function App() {
   }, [isAuthenticated]);
 
   const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => setIsAuthenticated(false);
+  const handleLogout = () => {
+    localStorage.removeItem('auth_credentials');
+    setIsAuthenticated(false);
+  };
 
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;

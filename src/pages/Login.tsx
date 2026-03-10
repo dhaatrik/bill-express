@@ -5,12 +5,26 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'admin123') {
-      onLogin();
-    } else {
-      setError('Invalid username or password');
+    setError('');
+
+    try {
+      const credentials = btoa(`${username}:${password}`);
+      const res = await fetch('/api/health', {
+        headers: {
+          'Authorization': `Basic ${credentials}`
+        }
+      });
+
+      if (res.ok) {
+        localStorage.setItem('auth_credentials', credentials);
+        onLogin();
+      } else {
+        setError('Invalid username or password');
+      }
+    } catch (err) {
+      setError('An error occurred while signing in');
     }
   };
 

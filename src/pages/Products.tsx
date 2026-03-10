@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown } from 'lucide-react';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -30,7 +30,7 @@ export default function Products() {
   }, []);
 
   const fetchProducts = async () => {
-    const res = await fetch('/api/products');
+    const res = await apiFetch('/api/products');
     const data = await res.json();
     setProducts(data);
   };
@@ -48,7 +48,7 @@ export default function Products() {
         stock: parseFloat(formData.stock)
       };
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -71,7 +71,7 @@ export default function Products() {
 
   const confirmDelete = async () => {
     if (deleteConfirmId !== null) {
-      await fetch(`/api/products/${deleteConfirmId}`, { method: 'DELETE' });
+      await apiFetch(`/api/products/${deleteConfirmId}`, { method: 'DELETE' });
       setDeleteConfirmId(null);
       fetchProducts();
     }
