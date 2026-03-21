@@ -122,11 +122,19 @@ const sampleProducts = [
   { code: 'CORA18', name: 'Coragen 18.5% SC', category: 'Pesticide', unit: 'ml', price: 1850.00, gst: 18, hsn: '38089199' }
 ];
 
-const insert = db.prepare('INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-
 const insertMany = db.transaction((products: any[]) => {
-  for (const p of products) {
-    insert.run(p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn, 100); // Default stock 100
+  if (products.length === 0) return;
+
+  const CHUNK_SIZE = 100;
+  for (let i = 0; i < products.length; i += CHUNK_SIZE) {
+    const chunk = products.slice(i, i + CHUNK_SIZE);
+    const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, 100)').join(', ');
+    const sql = `INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES ${placeholders}`;
+    const params: any[] = [];
+    for (const p of chunk) {
+      params.push(p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn);
+    }
+    db.prepare(sql).run(...params);
   }
 });
 
