@@ -64,7 +64,7 @@ describe('NewBill Component', () => {
 
     // Wait for the initial effect to complete to avoid act warning
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/products');
+      expect(global.fetch).toHaveBeenCalledWith('/api/products', expect.any(Object));
     });
 
     expect(screen.getByText('Create New Bill')).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe('NewBill Component', () => {
 
     // Wait for initial fetch to complete
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/products');
+      expect(global.fetch).toHaveBeenCalledWith('/api/products', expect.any(Object));
     });
 
     // Search for a product

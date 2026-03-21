@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer as createViteServer } from 'vite';
 import db from './src/db/index.js';
 import logger from './src/utils/logger.js';
 

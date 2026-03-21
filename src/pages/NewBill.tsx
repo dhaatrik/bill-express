@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Trash2 } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 export default function NewBill() {
   const navigate = useNavigate();

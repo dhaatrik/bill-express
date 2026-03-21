@@ -1,9 +1,14 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import request from 'supertest';
 import db from '../src/db/index.js';
 
 // Setup environment variable before importing server
 process.env.NODE_ENV = 'test';
+process.env.ADMIN_USERNAME = 'admin';
+process.env.ADMIN_PASSWORD = 'password';
+const authHeader = 'Basic ' + Buffer.from('admin:password').toString('base64');
+
 import { appPromise } from '../server.js';
 import type { Express } from 'express';
 
@@ -23,7 +28,7 @@ beforeEach(() => {
 
 describe('GET /api/dashboard/analytics', () => {
   it('should return empty arrays when no data exists', async () => {
-    const response = await request(app).get('/api/dashboard/analytics');
+    const response = await request(app).get('/api/dashboard/analytics').set('Authorization', authHeader);
 
     expect(response.status).toBe(200);
     expect(response.body.last7Days).toEqual([]);
@@ -75,7 +80,7 @@ describe('GET /api/dashboard/analytics', () => {
     // cancelled invoice item
     insertItem.run(i3Id, p3Id, 'Product 3', 'TEST3', '1234', 'Unit', 5, 300, 18, 90, 90, 1770);
 
-    const response = await request(app).get('/api/dashboard/analytics');
+    const response = await request(app).get('/api/dashboard/analytics').set('Authorization', authHeader);
 
     expect(response.status).toBe(200);
     const data = response.body;

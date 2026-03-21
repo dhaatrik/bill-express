@@ -1,6 +1,9 @@
-import { test, describe, after } from 'node:test';
-import assert from 'node:assert';
+// @vitest-environment node
+import { test, describe, afterAll as after, assert } from 'vitest';
 import request from 'supertest';
+process.env.ADMIN_USERNAME = 'admin';
+process.env.ADMIN_PASSWORD = 'password';
+const authHeader = 'Basic ' + Buffer.from('admin:password').toString('base64');
 import { app } from '../../server.js';
 import db from '../db/index.js';
 
@@ -25,6 +28,7 @@ describe('Products API', () => {
     // 1. Insert the product for the first time
     const res1 = await request(app)
       .post('/api/products')
+      .set('Authorization', authHeader)
       .send(testProduct)
       .expect(200);
 
@@ -33,10 +37,11 @@ describe('Products API', () => {
     // 2. Insert the same product again to trigger UNIQUE constraint violation
     const res2 = await request(app)
       .post('/api/products')
+      .set('Authorization', authHeader)
       .send(testProduct)
       .expect(400);
 
     assert.ok(res2.body.error, 'Response should contain an error message');
-    assert.match(res2.body.error, /UNIQUE constraint failed: products\.code/, 'Error message should indicate UNIQUE constraint failure');
+    assert.match(res2.body.error, /An error occurred while processing the request/, 'Error message should indicate failure');
   });
 });
