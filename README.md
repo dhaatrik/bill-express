@@ -1,5 +1,6 @@
 # Bill Express
 
+[![CI](https://github.com/DhaatuTheGamer/bill-express/actions/workflows/ci.yml/badge.svg)](https://github.com/DhaatuTheGamer/bill-express/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/react-19.0.0-blue.svg)
 ![TypeScript](https://img.shields.io/badge/typescript-5.8.2-blue.svg)
@@ -33,7 +34,7 @@ A modern, full-stack Point of Sale (POS) and billing application designed to str
 
 ## Prerequisites
 Ensure you have the following installed on your local machine:
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [Node.js](https://nodejs.org/) (v20 or higher recommended)
 - npm (v9 or higher recommended)
 
 ## Installation
@@ -86,11 +87,10 @@ We welcome contributions to Bill Express! Here's how you can help:
 Please ensure your code follows the existing style, run type definitions checks (`npm run lint`), and keep commits atomic and descriptive.
 
 ## Tests
-Currently, the project uses the TypeScript compiler for static analysis and type checking. To run these checks, use the `lint` command:
+The project uses Vitest for unit and integration testing, and the CI/CD pipeline ensures all tests are passing. To run the test suite locally:
 ```bash
-npm run lint
+npm run test
 ```
-*(Note: If you plan to add testing frameworks like Jest or Vitest, you would include those instructions here instead.)*
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for full details.
