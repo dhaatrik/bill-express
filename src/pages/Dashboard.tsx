@@ -3,16 +3,17 @@ import { Link } from 'react-router-dom';
 import { Receipt, TrendingUp, Package, Users, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { apiFetch } from '../utils/api.js';
+import { Invoice, Product, Customer, AnalyticsData, DashboardStats } from '../types.js';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     todaySales: 0,
     todayInvoices: 0,
     totalProducts: 0,
     totalCustomers: 0,
   });
   
-  const [analytics, setAnalytics] = useState({
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
     last7Days: [],
     topProducts: [],
     lowStock: []
@@ -21,21 +22,21 @@ export default function Dashboard() {
   useEffect(() => {
     apiFetch('/api/invoices')
       .then(res => res.json())
-      .then(data => {
+      .then((data: Invoice[]) => {
         const today = new Date().toISOString().split('T')[0];
-        const todayInvoices = data.filter((i: any) => i.date.startsWith(today) && i.status === 'active');
-        const todaySales = todayInvoices.reduce((sum: number, i: any) => sum + i.grand_total, 0);
+        const todayInvoices = data.filter((i: Invoice) => i.date.startsWith(today) && i.status === 'active');
+        const todaySales = todayInvoices.reduce((sum: number, i: Invoice) => sum + i.grand_total, 0);
         
         setStats(s => ({ ...s, todayInvoices: todayInvoices.length, todaySales }));
       });
       
     apiFetch('/api/products')
       .then(res => res.json())
-      .then(data => setStats(s => ({ ...s, totalProducts: data.length })));
+      .then((data: Product[]) => setStats(s => ({ ...s, totalProducts: data.length })));
       
     apiFetch('/api/customers')
       .then(res => res.json())
-      .then(data => setStats(s => ({ ...s, totalCustomers: data.length })));
+      .then((data: Customer[]) => setStats(s => ({ ...s, totalCustomers: data.length })));
       
     apiFetch('/api/dashboard/analytics')
       .then(res => res.json())
@@ -186,7 +187,7 @@ export default function Dashboard() {
             <h2 className="text-xl font-black text-rose-500 uppercase tracking-wider">Low Stock Alerts</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {analytics.lowStock.map((item: any) => (
+            {analytics.lowStock.map((item: Product) => (
               <div key={item.id} className="bg-zinc-950 border-2 border-rose-500/50 rounded-xl p-4 flex justify-between items-center">
                 <div>
                   <p className="font-bold text-white">{item.name}</p>

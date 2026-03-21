@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { apiFetch } from '../utils/api.js';
+import { Product } from '../types.js';
 
 export default function Products() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   // Search, Filter, Sort state
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +79,7 @@ export default function Products() {
     }
   };
 
-  const openEditModal = (product: any) => {
+  const openEditModal = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       code: product.code,
@@ -93,13 +95,13 @@ export default function Products() {
   };
 
   // Filter and Sort logic
-  let filteredProducts = products.filter((p: any) => {
+  let filteredProducts = products.filter((p: Product) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
-  filteredProducts.sort((a: any, b: any) => {
+  filteredProducts.sort((a: Product, b: Product) => {
     if (sortBy === 'name_asc') return a.name.localeCompare(b.name);
     if (sortBy === 'name_desc') return b.name.localeCompare(a.name);
     if (sortBy === 'price_asc') return a.price_ex_gst - b.price_ex_gst;
@@ -194,7 +196,7 @@ export default function Products() {
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((product: any) => (
+              filteredProducts.map((product: Product) => (
                 <tr key={product.id} className="hover:bg-zinc-800/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{product.code}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-300">{product.name}</td>

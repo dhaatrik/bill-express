@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Search, Edit2, Save, X, Download } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
+import { Customer } from '../types.js';
 
 export default function Customers() {
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
+  const [editForm, setEditForm] = useState<Partial<Customer>>({});
 
   useEffect(() => {
     fetchCustomers();
@@ -18,7 +19,7 @@ export default function Customers() {
       .then(data => setCustomers(data));
   };
 
-  const handleEdit = (customer: any) => {
+  const handleEdit = (customer: Customer) => {
     setEditingId(customer.id);
     setEditForm(customer);
   };
@@ -109,7 +110,7 @@ export default function Customers() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {filteredCustomers.map((customer: any) => (
+                    {filteredCustomers.map((customer: Customer) => (
                       <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors">
                         {editingId === customer.id ? (
                           <>

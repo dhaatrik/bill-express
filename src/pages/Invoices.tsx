@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiFetch } from '../utils/api.js';
+import { Invoice } from '../types.js';
 
 export default function Invoices() {
-  const [invoices, setInvoices] = useState([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -55,7 +56,7 @@ export default function Invoices() {
     const headers = ['Invoice No', 'Date', 'Customer', 'Type', 'Status', 'Payment Status', 'Amount Paid', 'Total Amount'];
     const csvContent = [
       headers.join(','),
-      ...filteredInvoices.map((i: any) => [
+      ...filteredInvoices.map((i: Invoice) => [
         `"${i.invoice_number}"`,
         `"${format(new Date(i.date), 'yyyy-MM-dd')}"`,
         `"${i.customer_name || 'Cash Sale'}"`,
@@ -74,7 +75,7 @@ export default function Invoices() {
     link.click();
   };
 
-  const filteredInvoices = invoices.filter((inv: any) => {
+  const filteredInvoices = invoices.filter((inv: Invoice) => {
     const matchesSearch = inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
       (inv.customer_name && inv.customer_name.toLowerCase().includes(search.toLowerCase())) ||
       (inv.customer_mobile && inv.customer_mobile.includes(search));
@@ -160,7 +161,7 @@ export default function Invoices() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {filteredInvoices.map((invoice: any) => (
+                    {filteredInvoices.map((invoice: Invoice) => (
                       <tr key={invoice.id} className="hover:bg-zinc-800/50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{invoice.invoice_number}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
