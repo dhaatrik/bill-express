@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Trash2 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
+import { Product, InvoiceItem } from '../types';
 
 export default function NewBill() {
   const navigate = useNavigate();
   const [billType, setBillType] = useState('cash');
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
   const [customer, setCustomer] = useState({
     name: '',
@@ -19,7 +20,7 @@ export default function NewBill() {
   });
 
   const [isInterState, setIsInterState] = useState(false);
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<InvoiceItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'value' | 'percentage'>('value');
   const [amountPaid, setAmountPaid] = useState<string>('');
@@ -41,7 +42,7 @@ export default function NewBill() {
     }
   }, [searchQuery, products]);
 
-  const addItem = (product: any) => {
+  const addItem = (product: Product) => {
     const existing = items.find(i => i.product_id === product.id);
     if (existing) {
       updateQuantity(product.id, existing.quantity + 1);
