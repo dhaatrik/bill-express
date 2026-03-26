@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import db from './src/db/index.js';
 import logger from './src/utils/logger.js';
+import { getNextInvoiceNumber } from './src/utils/invoice.js';
 
 export const app = express();
 
@@ -198,18 +199,7 @@ app.post('/api/invoices', (req, res) => {
         }
 
         // Generate Invoice Number (RAC/YYYY-YY/XXXXX)
-        const currentYear = new Date().getFullYear();
-        const nextYear = (currentYear + 1).toString().slice(-2);
-        const prefix = `RAC/${currentYear}-${nextYear}/`;
-        
-        const lastInvoice = db.prepare("SELECT invoice_number FROM invoices WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1").get(`${prefix}%`) as { invoice_number: string } | undefined;
-        
-        let nextNumber = 1;
-        if (lastInvoice) {
-          const parts = lastInvoice.invoice_number.split('/');
-          nextNumber = parseInt(parts[parts.length - 1], 10) + 1;
-        }
-        const invoice_number = `${prefix}${nextNumber.toString().padStart(5, '0')}`;
+        const invoice_number = getNextInvoiceNumber(db);
 
         const stmt = db.prepare(`
           INSERT INTO invoices (invoice_number, customer_id, type, subtotal, discount, cgst_total, sgst_total, igst_total, grand_total, payment_status, amount_paid)
