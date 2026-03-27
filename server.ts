@@ -242,10 +242,37 @@ app.post('/api/invoices', (req, res) => {
             db.prepare(currentQuery).run(...insertValues);
           }
 
-          const updateStockStmt = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
+          // Aggregate stock updates by product_id to prevent redundant updates for the same product
+          const stockUpdates = new Map();
           for (const item of items) {
             if (item.product_id) {
-              updateStockStmt.run(item.quantity, item.product_id);
+              stockUpdates.set(item.product_id, (stockUpdates.get(item.product_id) || 0) + item.quantity);
+            }
+          }
+
+          if (stockUpdates.size > 0) {
+            const MAX_VARIABLES = 32766;
+            const CHUNK_SIZE_UPDATE = Math.floor(MAX_VARIABLES / 3); // 2 parameters for CASE, 1 for IN clause
+
+            const updateEntries = Array.from(stockUpdates.entries());
+
+            for (let i = 0; i < updateEntries.length; i += CHUNK_SIZE_UPDATE) {
+              const chunk = updateEntries.slice(i, i + CHUNK_SIZE_UPDATE);
+
+              let query = 'UPDATE products SET stock = stock - CASE id ';
+              const values = [];
+              const ids = [];
+
+              for (const [id, quantity] of chunk) {
+                query += 'WHEN ? THEN ? ';
+                values.push(id, quantity);
+                ids.push(id);
+              }
+
+              query += `END WHERE id IN (${chunk.map(() => '?').join(', ')})`;
+              values.push(...ids);
+
+              db.prepare(query).run(...values);
             }
           }
         }
