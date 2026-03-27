@@ -172,4 +172,77 @@ describe('NewBill Component', () => {
     // New Grand Total: 118 - (118 * 0.1) = 118 - 11.8 = 106.2
     expect(screen.getByText('₹106.20', { selector: 'span.text-lime-400' })).toBeInTheDocument();
   });
+
+  it('should show an alert when API returns success: false on save', async () => {
+    const user = userEvent.setup();
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    renderComponent();
+
+    // Add item 1
+    const searchInput = screen.getByPlaceholderText('Search by name or code...');
+    await user.type(searchInput, 'Test');
+    await waitFor(() => {
+      expect(screen.getByText('Test Product 1')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Test Product 1'));
+
+    // Mock fetch for the save operation
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url === '/api/invoices') {
+        return Promise.resolve({
+          json: () => Promise.resolve({ success: false, error: 'Database error' }),
+        });
+      }
+      return Promise.resolve({
+        json: () => Promise.resolve({}),
+      });
+    });
+
+    const saveButton = screen.getByText('Save & Generate Invoice');
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(alertMock).toHaveBeenCalledWith('Database error');
+    });
+
+    alertMock.mockRestore();
+  });
+
+  it('should show an alert and log error when API fetch throws an error on save', async () => {
+    const user = userEvent.setup();
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderComponent();
+
+    // Add item 1
+    const searchInput = screen.getByPlaceholderText('Search by name or code...');
+    await user.type(searchInput, 'Test');
+    await waitFor(() => {
+      expect(screen.getByText('Test Product 1')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Test Product 1'));
+
+    // Mock fetch for the save operation to throw an error
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url === '/api/invoices') {
+        return Promise.reject(new Error('Network failure'));
+      }
+      return Promise.resolve({
+        json: () => Promise.resolve({}),
+      });
+    });
+
+    const saveButton = screen.getByText('Save & Generate Invoice');
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(consoleErrorMock).toHaveBeenCalledWith(expect.any(Error));
+      expect(alertMock).toHaveBeenCalledWith('Failed to save invoice');
+    });
+
+    alertMock.mockRestore();
+    consoleErrorMock.mockRestore();
+  });
 });
