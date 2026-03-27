@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
+import { handleError } from '../utils/error.js';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -30,8 +31,7 @@ export default function Settings() {
       });
       alert('Settings saved successfully!');
     } catch (err) {
-      console.error(err);
-      alert('Failed to save settings');
+      handleError(err, 'Failed to save settings');
     }
   };
 
