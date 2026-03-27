@@ -327,6 +327,11 @@ app.get('/api/settings', (req, res) => {
 
 app.put('/api/settings', (req, res) => {
     const { store_name, address, phone, gstin, state_code, logo_url } = req.body;
+    if (typeof store_name !== 'string' || typeof address !== 'string' || typeof phone !== 'string' ||
+        typeof gstin !== 'string' || typeof state_code !== 'string' ||
+        (logo_url !== undefined && logo_url !== null && typeof logo_url !== 'string')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       db.prepare(`
         UPDATE settings 
