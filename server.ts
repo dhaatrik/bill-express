@@ -138,6 +138,15 @@ app.get('/api/customers', (req, res) => {
 
 app.post('/api/customers', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
+    if (
+      typeof name !== 'string' ||
+      (mobile !== undefined && typeof mobile !== 'string') ||
+      (address !== undefined && typeof address !== 'string') ||
+      (gstin !== undefined && typeof gstin !== 'string') ||
+      (state !== undefined && typeof state !== 'string')
+    ) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         INSERT INTO customers (name, mobile, address, gstin, state)
@@ -152,10 +161,19 @@ app.post('/api/customers', (req, res) => {
 
 app.put('/api/customers/:id', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
+    if (
+      (name !== undefined && typeof name !== 'string') ||
+      (mobile !== undefined && typeof mobile !== 'string') ||
+      (address !== undefined && typeof address !== 'string') ||
+      (gstin !== undefined && typeof gstin !== 'string') ||
+      (state !== undefined && typeof state !== 'string')
+    ) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         UPDATE customers 
-        SET name = ?, mobile = ?, address = ?, gstin = ?, state = ?
+        SET name = COALESCE(?, name), mobile = COALESCE(?, mobile), address = COALESCE(?, address), gstin = COALESCE(?, gstin), state = COALESCE(?, state)
         WHERE id = ?
       `);
       stmt.run(name, mobile, address, gstin, state, req.params.id);
