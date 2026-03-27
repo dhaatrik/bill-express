@@ -77,7 +77,7 @@ app.post('/api/products', (req, res) => {
       `);
       const info = stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0);
       res.json({ id: info.lastInsertRowid });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -97,7 +97,7 @@ app.put('/api/products/:id', (req, res) => {
       `);
       stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0, req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -106,7 +106,7 @@ app.delete('/api/products/:id', (req, res) => {
     try {
       db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -145,7 +145,7 @@ app.post('/api/customers', (req, res) => {
       `);
       const info = stmt.run(name, mobile, address, gstin, state);
       res.json({ id: info.lastInsertRowid });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -160,7 +160,7 @@ app.put('/api/customers/:id', (req, res) => {
       `);
       stmt.run(name, mobile, address, gstin, state, req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -256,7 +256,7 @@ app.post('/api/invoices', (req, res) => {
       })();
 
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -288,9 +288,9 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
         db.prepare("UPDATE invoices SET status = 'cancelled' WHERE id = ?").run(invoiceId);
       })();
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       // Allow specific error message for "Invoice not found or already cancelled"
-      if (err.message === 'Invoice not found or already cancelled') {
+      if (err instanceof Error && err.message === 'Invoice not found or already cancelled') {
         res.status(400).json({ error: err.message });
       } else {
         res.status(400).json({ error: 'An error occurred while processing the request' });
@@ -304,7 +304,7 @@ app.put('/api/invoices/:id/payment', (req, res) => {
       db.prepare('UPDATE invoices SET payment_status = ?, amount_paid = ? WHERE id = ?')
         .run(payment_status, amount_paid, req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -329,7 +329,7 @@ app.put('/api/settings', (req, res) => {
         WHERE id = 1
       `).run(store_name, address, phone, gstin, state_code, logo_url);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -367,7 +367,7 @@ app.get('/api/dashboard/analytics', (req, res) => {
       `).all();
 
       res.json({ last7Days, topProducts, lowStock });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
