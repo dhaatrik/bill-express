@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import db from './src/db/index.js';
 import logger from './src/utils/logger.js';
+import { getNextInvoiceNumber } from './src/utils/invoice.js';
 
 export const app = express();
 
@@ -9,29 +10,41 @@ app.use(express.json());
 
 
   // Authentication Middleware
-  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const authHeader = req.headers.authorization || '';
-    const match = authHeader.match(/^Basic (.+)$/);
-    if (!match) {
-      res.set('WWW-Authenticate', 'Basic realm="API"');
-      return res.status(401).json({ error: 'Authentication required' });
+  let cachedAuth: string | null = null;
+  let cachedUsername: string | undefined = undefined;
+  let cachedPassword: string | undefined = undefined;
+
+  const getExpectedAuth = () => {
+    if (process.env.ADMIN_USERNAME !== cachedUsername || process.env.ADMIN_PASSWORD !== cachedPassword) {
+      cachedUsername = process.env.ADMIN_USERNAME;
+      cachedPassword = process.env.ADMIN_PASSWORD;
+      if (!cachedUsername || !cachedPassword) {
+        cachedAuth = null;
+      } else {
+        cachedAuth = `Basic ${Buffer.from(`${cachedUsername}:${cachedPassword}`).toString('base64')}`;
+      }
     }
+    return cachedAuth;
+  };
 
-    const [login, password] = Buffer.from(match[1], 'base64').toString().split(':');
+  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const expectedAuth = getExpectedAuth();
 
-    const expectedUsername = process.env.ADMIN_USERNAME;
-    const expectedPassword = process.env.ADMIN_PASSWORD;
-
-    if (!expectedUsername || !expectedPassword) {
+    if (!expectedAuth) {
       logger.error('ADMIN_USERNAME or ADMIN_PASSWORD environment variables are not set');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    if (login === expectedUsername && password === expectedPassword) {
+    const authHeader = req.headers.authorization || '';
+    if (authHeader === expectedAuth) {
       return next();
     }
 
     res.set('WWW-Authenticate', 'Basic realm="API"');
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     return res.status(401).json({ error: 'Invalid credentials' });
   };
 
@@ -64,7 +77,7 @@ app.post('/api/products', (req, res) => {
       `);
       const info = stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0);
       res.json({ id: info.lastInsertRowid });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -84,7 +97,7 @@ app.put('/api/products/:id', (req, res) => {
       `);
       stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0, req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -93,7 +106,7 @@ app.delete('/api/products/:id', (req, res) => {
     try {
       db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -125,6 +138,15 @@ app.get('/api/customers', (req, res) => {
 
 app.post('/api/customers', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
+    if (
+      typeof name !== 'string' ||
+      (mobile !== undefined && typeof mobile !== 'string') ||
+      (address !== undefined && typeof address !== 'string') ||
+      (gstin !== undefined && typeof gstin !== 'string') ||
+      (state !== undefined && typeof state !== 'string')
+    ) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         INSERT INTO customers (name, mobile, address, gstin, state)
@@ -132,22 +154,31 @@ app.post('/api/customers', (req, res) => {
       `);
       const info = stmt.run(name, mobile, address, gstin, state);
       res.json({ id: info.lastInsertRowid });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
 
 app.put('/api/customers/:id', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
+    if (
+      (name !== undefined && typeof name !== 'string') ||
+      (mobile !== undefined && typeof mobile !== 'string') ||
+      (address !== undefined && typeof address !== 'string') ||
+      (gstin !== undefined && typeof gstin !== 'string') ||
+      (state !== undefined && typeof state !== 'string')
+    ) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       const stmt = db.prepare(`
         UPDATE customers 
-        SET name = ?, mobile = ?, address = ?, gstin = ?, state = ?
+        SET name = COALESCE(?, name), mobile = COALESCE(?, mobile), address = COALESCE(?, address), gstin = COALESCE(?, gstin), state = COALESCE(?, state)
         WHERE id = ?
       `);
       stmt.run(name, mobile, address, gstin, state, req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -186,6 +217,43 @@ app.post('/api/invoices', (req, res) => {
       payment_status, amount_paid
     } = req.body;
 
+    if (
+      typeof type !== 'string' ||
+      typeof subtotal !== 'number' ||
+      typeof discount !== 'number' ||
+      typeof cgst_total !== 'number' ||
+      typeof sgst_total !== 'number' ||
+      typeof grand_total !== 'number' ||
+      (igst_total !== undefined && typeof igst_total !== 'number') ||
+      (customer_id !== undefined && customer_id !== null && typeof customer_id !== 'number') ||
+      (customer_name !== undefined && typeof customer_name !== 'string') ||
+      (customer_mobile !== undefined && typeof customer_mobile !== 'string') ||
+      (customer_address !== undefined && typeof customer_address !== 'string') ||
+      (customer_gstin !== undefined && typeof customer_gstin !== 'string') ||
+      (customer_state !== undefined && typeof customer_state !== 'string') ||
+      (payment_status !== undefined && typeof payment_status !== 'string') ||
+      (amount_paid !== undefined && typeof amount_paid !== 'number') ||
+      !Array.isArray(items) ||
+      !items.every(
+        (item: any) =>
+          item && typeof item === 'object' &&
+          (item.product_id === undefined || item.product_id === null || typeof item.product_id === 'number') &&
+          typeof item.product_name === 'string' &&
+          typeof item.product_code === 'string' &&
+          typeof item.hsn_code === 'string' &&
+          typeof item.unit === 'string' &&
+          typeof item.quantity === 'number' &&
+          typeof item.price_ex_gst === 'number' &&
+          typeof item.gst_rate === 'number' &&
+          typeof item.cgst_amount === 'number' &&
+          typeof item.sgst_amount === 'number' &&
+          (item.igst_amount === undefined || typeof item.igst_amount === 'number') &&
+          typeof item.total === 'number'
+      )
+    ) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
+
     try {
       db.transaction(() => {
         let finalCustomerId = customer_id;
@@ -198,18 +266,7 @@ app.post('/api/invoices', (req, res) => {
         }
 
         // Generate Invoice Number (RAC/YYYY-YY/XXXXX)
-        const currentYear = new Date().getFullYear();
-        const nextYear = (currentYear + 1).toString().slice(-2);
-        const prefix = `RAC/${currentYear}-${nextYear}/`;
-        
-        const lastInvoice = db.prepare("SELECT invoice_number FROM invoices WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1").get(`${prefix}%`) as { invoice_number: string } | undefined;
-        
-        let nextNumber = 1;
-        if (lastInvoice) {
-          const parts = lastInvoice.invoice_number.split('/');
-          nextNumber = parseInt(parts[parts.length - 1], 10) + 1;
-        }
-        const invoice_number = `${prefix}${nextNumber.toString().padStart(5, '0')}`;
+        const invoice_number = getNextInvoiceNumber(db);
 
         const stmt = db.prepare(`
           INSERT INTO invoices (invoice_number, customer_id, type, subtotal, discount, cgst_total, sgst_total, igst_total, grand_total, payment_status, amount_paid)
@@ -242,10 +299,37 @@ app.post('/api/invoices', (req, res) => {
             db.prepare(currentQuery).run(...insertValues);
           }
 
-          const updateStockStmt = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
+          // Aggregate stock updates by product_id to prevent redundant updates for the same product
+          const stockUpdates = new Map();
           for (const item of items) {
             if (item.product_id) {
-              updateStockStmt.run(item.quantity, item.product_id);
+              stockUpdates.set(item.product_id, (stockUpdates.get(item.product_id) || 0) + item.quantity);
+            }
+          }
+
+          if (stockUpdates.size > 0) {
+            const MAX_VARIABLES = 32766;
+            const CHUNK_SIZE_UPDATE = Math.floor(MAX_VARIABLES / 3); // 2 parameters for CASE, 1 for IN clause
+
+            const updateEntries = Array.from(stockUpdates.entries());
+
+            for (let i = 0; i < updateEntries.length; i += CHUNK_SIZE_UPDATE) {
+              const chunk = updateEntries.slice(i, i + CHUNK_SIZE_UPDATE);
+
+              let query = 'UPDATE products SET stock = stock - CASE id ';
+              const values = [];
+              const ids = [];
+
+              for (const [id, quantity] of chunk) {
+                query += 'WHEN ? THEN ? ';
+                values.push(id, quantity);
+                ids.push(id);
+              }
+
+              query += `END WHERE id IN (${chunk.map(() => '?').join(', ')})`;
+              values.push(...ids);
+
+              db.prepare(query).run(...values);
             }
           }
         }
@@ -254,7 +338,7 @@ app.post('/api/invoices', (req, res) => {
       })();
 
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -286,9 +370,9 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
         db.prepare("UPDATE invoices SET status = 'cancelled' WHERE id = ?").run(invoiceId);
       })();
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       // Allow specific error message for "Invoice not found or already cancelled"
-      if (err.message === 'Invoice not found or already cancelled') {
+      if (err instanceof Error && err.message === 'Invoice not found or already cancelled') {
         res.status(400).json({ error: err.message });
       } else {
         res.status(400).json({ error: 'An error occurred while processing the request' });
@@ -302,7 +386,7 @@ app.put('/api/invoices/:id/payment', (req, res) => {
       db.prepare('UPDATE invoices SET payment_status = ?, amount_paid = ? WHERE id = ?')
         .run(payment_status, amount_paid, req.params.id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -315,6 +399,11 @@ app.get('/api/settings', (req, res) => {
 
 app.put('/api/settings', (req, res) => {
     const { store_name, address, phone, gstin, state_code, logo_url } = req.body;
+    if (typeof store_name !== 'string' || typeof address !== 'string' || typeof phone !== 'string' ||
+        typeof gstin !== 'string' || typeof state_code !== 'string' ||
+        (logo_url !== undefined && logo_url !== null && typeof logo_url !== 'string')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
     try {
       db.prepare(`
         UPDATE settings 
@@ -322,7 +411,7 @@ app.put('/api/settings', (req, res) => {
         WHERE id = 1
       `).run(store_name, address, phone, gstin, state_code, logo_url);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -360,7 +449,7 @@ app.get('/api/dashboard/analytics', (req, res) => {
       `).all();
 
       res.json({ last7Days, topProducts, lowStock });
-    } catch (err: any) {
+    } catch (err) {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
