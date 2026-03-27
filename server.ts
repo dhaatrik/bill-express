@@ -9,29 +9,41 @@ app.use(express.json());
 
 
   // Authentication Middleware
-  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const authHeader = req.headers.authorization || '';
-    const match = authHeader.match(/^Basic (.+)$/);
-    if (!match) {
-      res.set('WWW-Authenticate', 'Basic realm="API"');
-      return res.status(401).json({ error: 'Authentication required' });
+  let cachedAuth: string | null = null;
+  let cachedUsername: string | undefined = undefined;
+  let cachedPassword: string | undefined = undefined;
+
+  const getExpectedAuth = () => {
+    if (process.env.ADMIN_USERNAME !== cachedUsername || process.env.ADMIN_PASSWORD !== cachedPassword) {
+      cachedUsername = process.env.ADMIN_USERNAME;
+      cachedPassword = process.env.ADMIN_PASSWORD;
+      if (!cachedUsername || !cachedPassword) {
+        cachedAuth = null;
+      } else {
+        cachedAuth = `Basic ${Buffer.from(`${cachedUsername}:${cachedPassword}`).toString('base64')}`;
+      }
     }
+    return cachedAuth;
+  };
 
-    const [login, password] = Buffer.from(match[1], 'base64').toString().split(':');
+  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const expectedAuth = getExpectedAuth();
 
-    const expectedUsername = process.env.ADMIN_USERNAME;
-    const expectedPassword = process.env.ADMIN_PASSWORD;
-
-    if (!expectedUsername || !expectedPassword) {
+    if (!expectedAuth) {
       logger.error('ADMIN_USERNAME or ADMIN_PASSWORD environment variables are not set');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    if (login === expectedUsername && password === expectedPassword) {
+    const authHeader = req.headers.authorization || '';
+    if (authHeader === expectedAuth) {
       return next();
     }
 
     res.set('WWW-Authenticate', 'Basic realm="API"');
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     return res.status(401).json({ error: 'Invalid credentials' });
   };
 
