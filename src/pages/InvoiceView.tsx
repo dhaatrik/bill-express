@@ -4,11 +4,12 @@ import { Printer, ArrowLeft, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { toWords } from 'number-to-words';
 import { apiFetch } from '../utils/api.js';
+import { Invoice, InvoiceItem, Settings } from '../types.js';
 
 export default function InvoiceView() {
   const { id } = useParams();
-  const [invoice, setInvoice] = useState<any>(null);
-  const [settings, setSettings] = useState<any>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export default function InvoiceView() {
             </tr>
           </thead>
           <tbody className="font-medium">
-            {invoice.items.map((item: any, index: number) => (
+            {invoice.items.map((item: InvoiceItem, index: number) => (
               <tr key={item.id} className="even:bg-zinc-50">
                 <td className="border-2 border-zinc-950 px-3 py-2 text-center font-bold">{index + 1}</td>
                 <td className="border-2 border-zinc-950 px-3 py-2">
