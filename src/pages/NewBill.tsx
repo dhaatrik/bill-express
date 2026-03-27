@@ -2,7 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Trash2 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
-import { Product, InvoiceItem } from '../types';
+import { Product } from '../types';
+
+interface BillItem {
+  product_id: number;
+  product_name: string;
+  product_code: string;
+  hsn_code: string;
+  unit: string;
+  quantity: number;
+  price_ex_gst: number;
+  gst_rate: number;
+  cgst_amount: number;
+  sgst_amount: number;
+  igst_amount: number;
+  total: number;
+}
 
 export default function NewBill() {
   const navigate = useNavigate();
@@ -20,7 +35,7 @@ export default function NewBill() {
   });
 
   const [isInterState, setIsInterState] = useState(false);
-  const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [items, setItems] = useState<BillItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'value' | 'percentage'>('value');
   const [amountPaid, setAmountPaid] = useState<string>('');
