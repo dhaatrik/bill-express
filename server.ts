@@ -125,6 +125,15 @@ app.delete('/api/products/:id', (req, res) => {
   });
 
   // Customers
+app.get('/api/customers/count', (req, res) => {
+    try {
+      const result = db.prepare('SELECT COUNT(*) as count FROM customers').get() as { count: number };
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: 'An error occurred while processing the request' });
+    }
+  });
+
 app.get('/api/customers', (req, res) => {
     const search = req.query.search as string;
     if (search) {
@@ -420,9 +429,8 @@ app.get('/api/dashboard/analytics', (req, res) => {
         SELECT
           (SELECT COUNT(*) FROM invoices WHERE date >= date('now', 'start of day') AND date < date('now', '+1 day', 'start of day') AND status = 'active') as todayInvoices,
           (SELECT COALESCE(SUM(grand_total), 0) FROM invoices WHERE date >= date('now', 'start of day') AND date < date('now', '+1 day', 'start of day') AND status = 'active') as todaySales,
-          (SELECT COUNT(*) FROM products) as totalProducts,
-          (SELECT COUNT(*) FROM customers) as totalCustomers
-      `).get() as { todayInvoices: number, todaySales: number, totalProducts: number, totalCustomers: number };
+          (SELECT COUNT(*) FROM products) as totalProducts
+      `).get() as { todayInvoices: number, todaySales: number, totalProducts: number };
 
       // Sales over last 7 days
       const last7Days = db.prepare(`
