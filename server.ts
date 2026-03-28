@@ -183,6 +183,8 @@ app.put('/api/customers/:id', (req, res) => {
     }
   });
 
+const isValidAmount = (n: any) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+
   // Invoices
 app.get('/api/invoices', (req, res) => {
     const invoices = db.prepare(`
@@ -219,12 +221,12 @@ app.post('/api/invoices', (req, res) => {
 
     if (
       typeof type !== 'string' ||
-      typeof subtotal !== 'number' ||
-      typeof discount !== 'number' ||
-      typeof cgst_total !== 'number' ||
-      typeof sgst_total !== 'number' ||
-      typeof grand_total !== 'number' ||
-      (igst_total !== undefined && typeof igst_total !== 'number') ||
+      !isValidAmount(subtotal) ||
+      !isValidAmount(discount) ||
+      !isValidAmount(cgst_total) ||
+      !isValidAmount(sgst_total) ||
+      !isValidAmount(grand_total) ||
+      (igst_total !== undefined && !isValidAmount(igst_total)) ||
       (customer_id !== undefined && customer_id !== null && typeof customer_id !== 'number') ||
       (customer_name !== undefined && typeof customer_name !== 'string') ||
       (customer_mobile !== undefined && typeof customer_mobile !== 'string') ||
@@ -232,7 +234,7 @@ app.post('/api/invoices', (req, res) => {
       (customer_gstin !== undefined && typeof customer_gstin !== 'string') ||
       (customer_state !== undefined && typeof customer_state !== 'string') ||
       (payment_status !== undefined && typeof payment_status !== 'string') ||
-      (amount_paid !== undefined && typeof amount_paid !== 'number') ||
+      (amount_paid !== undefined && !isValidAmount(amount_paid)) ||
       !Array.isArray(items) ||
       !items.every(
         (item: any) =>
@@ -242,13 +244,13 @@ app.post('/api/invoices', (req, res) => {
           typeof item.product_code === 'string' &&
           typeof item.hsn_code === 'string' &&
           typeof item.unit === 'string' &&
-          typeof item.quantity === 'number' &&
-          typeof item.price_ex_gst === 'number' &&
-          typeof item.gst_rate === 'number' &&
-          typeof item.cgst_amount === 'number' &&
-          typeof item.sgst_amount === 'number' &&
-          (item.igst_amount === undefined || typeof item.igst_amount === 'number') &&
-          typeof item.total === 'number'
+          isValidAmount(item.quantity) &&
+          isValidAmount(item.price_ex_gst) &&
+          isValidAmount(item.gst_rate) &&
+          isValidAmount(item.cgst_amount) &&
+          isValidAmount(item.sgst_amount) &&
+          (item.igst_amount === undefined || isValidAmount(item.igst_amount)) &&
+          isValidAmount(item.total)
       )
     ) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
