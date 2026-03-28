@@ -63,4 +63,21 @@ describe('PUT /api/settings security validation', () => {
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid or missing required fields');
   });
+
+  it('should return 413 Payload Too Large when request body exceeds 1MB', async () => {
+    const largeString = 'a'.repeat(1024 * 1024 * 2); // 2MB string
+    const response = await request(app)
+      .put('/api/settings')
+      .set('Authorization', authHeader)
+      .send({
+        store_name: largeString,
+        address: 'Test Address',
+        phone: '1234567890',
+        gstin: 'GSTIN123',
+        state_code: 'SC123',
+        logo_url: 'http://example.com/logo.png'
+      });
+
+    expect(response.status).toBe(413);
+  });
 });
