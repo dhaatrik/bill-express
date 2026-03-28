@@ -1,5 +1,6 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
+import crypto from 'crypto';
 import db from './src/db/index.js';
 import logger from './src/utils/logger.js';
 import { getNextInvoiceNumber } from './src/utils/invoice.js';
@@ -36,7 +37,19 @@ app.use(express.json({ limit: '1mb' }));
     }
 
     const authHeader = req.headers.authorization || '';
-    if (authHeader === expectedAuth) {
+
+    const expectedBuffer = Buffer.from(expectedAuth);
+    const providedBuffer = Buffer.from(authHeader);
+
+    let valid = false;
+    if (expectedBuffer.length === providedBuffer.length) {
+      valid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+    } else {
+      crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
+      valid = false;
+    }
+
+    if (valid) {
       return next();
     }
 
