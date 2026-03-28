@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Settings from './Settings';
 import { apiFetch } from '../utils/api.js';
+import { logger } from '../utils/logger.js';
 
 // Mock apiFetch
 vi.mock('../utils/api.js', () => ({
@@ -24,7 +25,7 @@ describe('Settings Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
     alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 

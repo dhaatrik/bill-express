@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Products from './Products';
 import * as apiModule from '../utils/api.js';
+import { logger } from '../utils/logger.js';
 
 vi.mock('../utils/api.js', () => ({
   apiFetch: vi.fn(),
@@ -15,7 +16,7 @@ describe('Products Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorMock = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     // Mock initial fetch
     (apiModule.apiFetch as any).mockResolvedValueOnce({
@@ -87,7 +88,7 @@ describe('Products Component', () => {
     // Submit the form
     await user.click(screen.getByText('Save'));
 
-    // Verify console.error and alert were called
+    // Verify logger.error and alert were called
     await waitFor(() => {
       expect(consoleErrorMock).toHaveBeenCalled();
       expect(alertMock).toHaveBeenCalledWith('An error occurred while saving the product.');

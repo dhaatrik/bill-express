@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import NewBill from './NewBill';
+import { logger } from '../utils/logger';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -212,7 +213,7 @@ describe('NewBill Component', () => {
   it('should show an alert and log error when API fetch throws an error on save', async () => {
     const user = userEvent.setup();
     const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    const consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorMock = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     renderComponent();
 
