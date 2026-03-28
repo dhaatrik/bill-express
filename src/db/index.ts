@@ -122,7 +122,7 @@ const sampleProducts = [
   { code: 'CORA18', name: 'Coragen 18.5% SC', category: 'Pesticide', unit: 'ml', price: 1850.00, gst: 18, hsn: '38089199' }
 ];
 
-const insertMany = db.transaction((products: any[]) => {
+const insertMany = db.transaction((products: { code: string; name: string; category: string; unit: string; price: number; gst: number; hsn: string; }[]) => {
   if (products.length === 0) return;
 
   const CHUNK_SIZE = 100;
