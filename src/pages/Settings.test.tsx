@@ -89,6 +89,69 @@ describe('Settings Component', () => {
     expect(alertSpy).toHaveBeenCalledWith('Settings saved successfully!');
   });
 
+  it('should update input values and save updated settings', async () => {
+    const user = userEvent.setup();
+
+    // Initial fetch with empty settings
+    vi.mocked(apiFetch).mockResolvedValueOnce({
+      json: () => Promise.resolve({
+        store_name: '',
+        address: '',
+        phone: '',
+        gstin: '',
+        state_code: '',
+        logo_url: ''
+      })
+    } as Response);
+
+    render(<Settings />);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith('/api/settings');
+    });
+
+    // Type into inputs
+    const storeNameInput = screen.getByText('Store Name').nextElementSibling as HTMLInputElement;
+    const addressInput = screen.getByText('Address').nextElementSibling as HTMLTextAreaElement;
+    const phoneInput = screen.getByText('Phone').nextElementSibling as HTMLInputElement;
+    const gstinInput = screen.getByText('GSTIN').nextElementSibling as HTMLInputElement;
+    const stateCodeInput = screen.getByText('State Code').nextElementSibling as HTMLInputElement;
+    const logoUrlInput = screen.getByText('Logo URL (Optional)').nextElementSibling as HTMLInputElement;
+
+    await user.type(storeNameInput, 'New Store');
+    await user.type(addressInput, '456 New St');
+    await user.type(phoneInput, '0987654321');
+    await user.type(gstinInput, '33BBBBB0000B2Z6');
+    await user.type(stateCodeInput, '33');
+    await user.type(logoUrlInput, 'http://example.com/newlogo.png');
+
+    // Setup for save
+    vi.mocked(apiFetch).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    } as Response);
+
+    const saveBtn = screen.getByRole('button', { name: /save settings/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith('/api/settings', expect.objectContaining({
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_name: 'New Store',
+          address: '456 New St',
+          phone: '0987654321',
+          gstin: '33BBBBB0000B2Z6',
+          state_code: '33',
+          logo_url: 'http://example.com/newlogo.png'
+        })
+      }));
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('Settings saved successfully!');
+  });
+
   it('should catch error when saving settings fails and alert', async () => {
     const user = userEvent.setup();
 
