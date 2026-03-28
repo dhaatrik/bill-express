@@ -26,6 +26,24 @@ beforeEach(() => {
     db.exec('DELETE FROM customers');
 });
 
+describe('GET /api/customers/count', () => {
+  it('should return 0 when no customers exist', async () => {
+    const response = await request(app).get('/api/customers/count').set('Authorization', authHeader);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ count: 0 });
+  });
+
+  it('should return the correct count of customers', async () => {
+    const insertCustomer = db.prepare('INSERT INTO customers (name, mobile) VALUES (?, ?)');
+    insertCustomer.run('Test Customer 1', '1234567890');
+    insertCustomer.run('Test Customer 2', '0987654321');
+
+    const response = await request(app).get('/api/customers/count').set('Authorization', authHeader);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ count: 2 });
+  });
+});
+
 describe('GET /api/dashboard/analytics', () => {
   it('should return empty arrays when no data exists', async () => {
     const response = await request(app).get('/api/dashboard/analytics').set('Authorization', authHeader);

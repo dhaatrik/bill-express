@@ -20,15 +20,22 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    // Optimization: Fetch customer count directly from a fast, dedicated endpoint
+    apiFetch('/api/customers/count')
+      .then(res => res.json())
+      .then(data => {
+        setStats(s => ({ ...s, totalCustomers: data.count }));
+      });
+
     apiFetch('/api/dashboard/analytics')
       .then(res => res.json())
       .then(data => {
-        setStats({
+        setStats(s => ({
+          ...s,
           todaySales: data.todaySales,
           todayInvoices: data.todayInvoices,
           totalProducts: data.totalProducts,
-          totalCustomers: data.totalCustomers,
-        });
+        }));
         setAnalytics({
           last7Days: data.last7Days,
           topProducts: data.topProducts,

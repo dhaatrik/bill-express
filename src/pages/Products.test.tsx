@@ -35,7 +35,7 @@ describe('Products Component', () => {
 
     // Wait for initial fetch
     await waitFor(() => {
-      expect(apiModule.apiFetch).toHaveBeenCalledWith('/api/products');
+      expect(apiModule.apiFetch).toHaveBeenCalledWith('/api/products?page=1&limit=50&search=&category=All&sort=name_asc');
     });
 
     // Open add product modal
@@ -69,7 +69,7 @@ describe('Products Component', () => {
 
     // Wait for initial fetch
     await waitFor(() => {
-      expect(apiModule.apiFetch).toHaveBeenCalledWith('/api/products');
+      expect(apiModule.apiFetch).toHaveBeenCalledWith('/api/products?page=1&limit=50&search=&category=All&sort=name_asc');
     });
 
     // Open add product modal
