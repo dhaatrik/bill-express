@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { test, describe, afterAll as after, assert } from 'vitest';
+import { test, describe, afterAll as after, assert, vi } from 'vitest';
 import request from 'supertest';
 process.env.ADMIN_USERNAME = 'admin';
 process.env.ADMIN_PASSWORD = 'password';
@@ -43,5 +43,32 @@ describe('Products API', () => {
 
     assert.ok(res2.body.error, 'Response should contain an error message');
     assert.match(res2.body.error, /An error occurred while processing the request/, 'Error message should indicate failure');
+  });
+
+  test('should return 400 when database throws an unexpected error during insert', async () => {
+    // Spy on db.prepare to simulate an unexpected error
+    const spy = vi.spyOn(db, 'prepare').mockImplementationOnce(() => {
+      throw new Error('Simulated database error');
+    });
+
+    const res = await request(app)
+      .post('/api/products')
+      .set('Authorization', authHeader)
+      .send({
+        code: 'TEST_ERR_01',
+        name: 'Error Test Product',
+        category: 'Test',
+        unit: 'pcs',
+        price_ex_gst: 100,
+        gst_rate: 18,
+        hsn_code: '1234',
+        stock: 10
+      })
+      .expect(400);
+
+    assert.ok(res.body.error, 'Response should contain an error message');
+    assert.match(res.body.error, /An error occurred while processing the request/, 'Error message should indicate failure');
+
+    spy.mockRestore();
   });
 });
