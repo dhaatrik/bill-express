@@ -130,10 +130,7 @@ const insertMany = db.transaction((products: any[]) => {
     const chunk = products.slice(i, i + CHUNK_SIZE);
     const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, 100)').join(', ');
     const sql = `INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES ${placeholders}`;
-    const params: any[] = [];
-    for (const p of chunk) {
-      params.push(p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn);
-    }
+    const params = chunk.flatMap(p => [p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn]);
     db.prepare(sql).run(...params);
   }
 });
