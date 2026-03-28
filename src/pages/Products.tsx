@@ -5,6 +5,10 @@ import { Product } from '../types.js';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -28,13 +32,30 @@ export default function Products() {
   });
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 300); // Debounce fetch on search
+    return () => clearTimeout(timer);
+  }, [page, limit, searchQuery, categoryFilter, sortBy]);
 
   const fetchProducts = async () => {
-    const res = await apiFetch('/api/products');
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      search: searchQuery,
+      category: categoryFilter,
+      sort: sortBy
+    });
+    const res = await apiFetch(`/api/products?${params}`);
     const data = await res.json();
-    setProducts(data);
+    if (data.data) {
+      setProducts(data.data);
+      setTotalProducts(data.total);
+    } else {
+      // Fallback if data is array (e.g. some tests mock returning array)
+      setProducts(Array.isArray(data) ? data : []);
+      setTotalProducts(Array.isArray(data) ? data.length : 0);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,20 +115,7 @@ export default function Products() {
     setIsModalOpen(true);
   };
 
-  // Filter and Sort logic
-  let filteredProducts = products.filter((p: Product) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.code.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
-  filteredProducts.sort((a: Product, b: Product) => {
-    if (sortBy === 'name_asc') return a.name.localeCompare(b.name);
-    if (sortBy === 'name_desc') return b.name.localeCompare(a.name);
-    if (sortBy === 'price_asc') return a.price_ex_gst - b.price_ex_gst;
-    if (sortBy === 'price_desc') return b.price_ex_gst - a.price_ex_gst;
-    return 0;
-  });
+  const totalPages = Math.ceil(totalProducts / limit);
 
   return (
     <div className="space-y-6">
@@ -136,7 +144,10 @@ export default function Products() {
             type="text"
             placeholder="Search by Code or Name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             className="block w-full pl-10 sm:text-sm"
           />
         </div>
@@ -146,7 +157,10 @@ export default function Products() {
             <Filter className="h-5 w-5 text-zinc-500 mr-2" />
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setPage(1);
+              }}
               className="block w-full sm:text-sm"
             >
               <option value="All">All Categories</option>
@@ -162,7 +176,10 @@ export default function Products() {
             <ArrowUpDown className="h-5 w-5 text-zinc-500 mr-2" />
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setPage(1);
+              }}
               className="block w-full sm:text-sm"
             >
               <option value="name_asc">Name (A-Z)</option>
@@ -189,14 +206,14 @@ export default function Products() {
             </tr>
           </thead>
           <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-zinc-500 font-medium">
+                <td colSpan={8} className="px-6 py-8 text-center text-zinc-500 font-medium">
                   No products found matching your criteria.
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((product: Product) => (
+              products.map((product: Product) => (
                 <tr key={product.id} className="hover:bg-zinc-800/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{product.code}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-300">{product.name}</td>
@@ -227,6 +244,58 @@ export default function Products() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">
+                Showing <span className="font-medium text-white">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-white">{Math.min(page * limit, totalProducts)}</span> of <span className="font-medium text-white">{totalProducts}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  <span className="sr-only">Previous</span>
+                  &larr;
+                </button>
+                <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  <span className="sr-only">Next</span>
+                  &rarr;
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId !== null && (

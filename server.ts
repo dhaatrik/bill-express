@@ -72,8 +72,48 @@ app.use(express.json({ limit: '1mb' }));
 
   // Products
 app.get('/api/products', (req, res) => {
-    const products = db.prepare('SELECT * FROM products ORDER BY name ASC').all();
-    res.json(products);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const search = req.query.search as string || '';
+    const category = req.query.category as string || 'All';
+    const sort = req.query.sort as string || 'name_asc';
+
+    let query = 'SELECT * FROM products';
+    let countQuery = 'SELECT COUNT(*) as count FROM products';
+    const params: any[] = [];
+    const conditions: string[] = [];
+
+    if (search) {
+      conditions.push('(name LIKE ? OR code LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (category !== 'All') {
+      conditions.push('category = ?');
+      params.push(category);
+    }
+
+    if (conditions.length > 0) {
+      const whereClause = ' WHERE ' + conditions.join(' AND ');
+      query += whereClause;
+      countQuery += whereClause;
+    }
+
+    if (sort === 'name_asc') query += ' ORDER BY name ASC';
+    else if (sort === 'name_desc') query += ' ORDER BY name DESC';
+    else if (sort === 'price_asc') query += ' ORDER BY price_ex_gst ASC';
+    else if (sort === 'price_desc') query += ' ORDER BY price_ex_gst DESC';
+    else query += ' ORDER BY name ASC';
+
+    query += ' LIMIT ? OFFSET ?';
+
+    try {
+      const totalResult = db.prepare(countQuery).get(...params) as { count: number };
+      const products = db.prepare(query).all(...params, limit, (page - 1) * limit);
+      res.json({ data: products, total: totalResult.count });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to fetch products' });
+    }
   });
 
 app.post('/api/products', (req, res) => {

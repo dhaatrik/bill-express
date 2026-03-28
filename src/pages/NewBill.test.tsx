@@ -40,9 +40,9 @@ describe('NewBill Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn().mockImplementation((url) => {
-      if (url === '/api/products') {
+      if (url.startsWith('/api/products')) {
         return Promise.resolve({
-          json: () => Promise.resolve(mockProducts),
+          json: () => Promise.resolve({ data: mockProducts, total: mockProducts.length }),
         });
       }
       return Promise.resolve({
@@ -62,11 +62,6 @@ describe('NewBill Component', () => {
   it('should render the component correctly', async () => {
     renderComponent();
 
-    // Wait for the initial effect to complete to avoid act warning
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/products', expect.any(Object));
-    });
-
     expect(screen.getByText('Create New Bill')).toBeInTheDocument();
     expect(screen.getByText('Customer Details')).toBeInTheDocument();
     expect(screen.getByText('Subtotal (excl. GST)')).toBeInTheDocument();
@@ -77,17 +72,13 @@ describe('NewBill Component', () => {
     const user = userEvent.setup();
     renderComponent();
 
-    // Wait for initial fetch to complete
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/products', expect.any(Object));
-    });
-
     // Search for a product
     const searchInput = screen.getByPlaceholderText('Search by name or code...');
     await user.type(searchInput, 'Test');
 
     // Wait for filtered products to show up
     await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/products?search=Test'), expect.any(Object));
       expect(screen.getByText('Test Product 1')).toBeInTheDocument();
     });
 
@@ -106,12 +97,20 @@ describe('NewBill Component', () => {
 
     // Update quantity by searching for the item and clicking it again
     const searchInputAgain = screen.getByPlaceholderText('Search by name or code...');
+    await user.clear(searchInputAgain);
     await user.type(searchInputAgain, 'Test Product 1');
     await waitFor(() => {
-      expect(screen.getAllByText('Test Product 1').length).toBeGreaterThan(0);
+      // One might be in the cart, so we expect at least 2 or we can just find the list item
+      const elements = screen.getAllByText('Test Product 1');
+      expect(elements.length).toBeGreaterThan(0);
+
+      // Look for the specific li element in the dropdown
+      const listItem = elements.find(el => el.closest('li'));
+      expect(listItem).toBeTruthy();
     });
-    // Find the add item option (the first match is likely the list item)
-    const addProduct1 = screen.getAllByText('Test Product 1')[0];
+    // Find the add item option
+    const elements = screen.getAllByText('Test Product 1');
+    const addProduct1 = elements.find(el => el.closest('li')) || elements[0];
     await user.click(addProduct1);
 
     // We need to wait for the UI to update
@@ -194,6 +193,11 @@ describe('NewBill Component', () => {
           json: () => Promise.resolve({ success: false, error: 'Database error' }),
         });
       }
+      if (url.startsWith('/api/products')) {
+        return Promise.resolve({
+          json: () => Promise.resolve({ data: mockProducts, total: mockProducts.length }),
+        });
+      }
       return Promise.resolve({
         json: () => Promise.resolve({}),
       });
@@ -228,6 +232,11 @@ describe('NewBill Component', () => {
     global.fetch = vi.fn().mockImplementation((url) => {
       if (url === '/api/invoices') {
         return Promise.reject(new Error('Network failure'));
+      }
+      if (url.startsWith('/api/products')) {
+        return Promise.resolve({
+          json: () => Promise.resolve({ data: mockProducts, total: mockProducts.length }),
+        });
       }
       return Promise.resolve({
         json: () => Promise.resolve({}),

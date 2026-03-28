@@ -22,7 +22,6 @@ interface BillItem {
 export default function NewBill() {
   const navigate = useNavigate();
   const [billType, setBillType] = useState('cash');
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
@@ -41,21 +40,20 @@ export default function NewBill() {
   const [amountPaid, setAmountPaid] = useState<string>('');
 
   useEffect(() => {
-    apiFetch('/api/products')
-      .then(res => res.json())
-      .then(data => setProducts(data));
-  }, []);
-
-  useEffect(() => {
     if (searchQuery.length > 1) {
-      setFilteredProducts(products.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.code.toLowerCase().includes(searchQuery.toLowerCase())
-      ));
+      const timer = setTimeout(() => {
+        apiFetch(`/api/products?search=${encodeURIComponent(searchQuery)}&limit=10`)
+          .then(res => res.json())
+          .then(data => {
+            setFilteredProducts(data.data || (Array.isArray(data) ? data : []));
+          })
+          .catch(err => console.error('Failed to fetch products:', err));
+      }, 300);
+      return () => clearTimeout(timer);
     } else {
       setFilteredProducts([]);
     }
-  }, [searchQuery, products]);
+  }, [searchQuery]);
 
   const addItem = (product: Product) => {
     const existing = items.find(i => i.product_id === product.id);
