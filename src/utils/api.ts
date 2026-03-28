@@ -12,10 +12,9 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit): Pr
   });
 
   if (response.status === 401) {
-    // Optional: trigger a logout if the token becomes invalid
-    // localStorage.removeItem('auth_credentials');
-    // localStorage.setItem('isAuthenticated', 'false');
-    // window.location.href = '/';
+    localStorage.removeItem('auth_credentials');
+    localStorage.setItem('isAuthenticated', 'false');
+    window.location.href = '/';
   }
 
   return response;
