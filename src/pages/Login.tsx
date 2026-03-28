@@ -72,14 +72,6 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
             Sign In
           </button>
         </form>
-
-        <div className="mt-8 pt-6 border-t-2 border-zinc-800 text-center">
-          <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider mb-2">For Testing Purposes</p>
-          <div className="inline-block bg-zinc-950 border-2 border-zinc-800 rounded-xl p-4 text-left">
-            <p className="text-zinc-400 font-mono text-sm"><span className="text-lime-400">Username:</span> admin</p>
-            <p className="text-zinc-400 font-mono text-sm mt-1"><span className="text-lime-400">Password:</span> admin123</p>
-          </div>
-        </div>
       </div>
     </div>
   );
