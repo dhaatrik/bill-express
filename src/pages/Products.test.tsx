@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import Products from './Products';
 import * as apiModule from '../utils/api.js';
 
@@ -9,19 +9,19 @@ vi.mock('../utils/api.js', () => ({
 }));
 
 describe('Products Component', () => {
-  let alertMock: any;
-  let consoleErrorMock: any;
+  let alertMock: Mock;
+  let consoleErrorMock: Mock;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+    alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {}) as Mock;
+    consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {}) as Mock;
 
     // Mock initial fetch
-    (apiModule.apiFetch as any).mockResolvedValueOnce({
+    vi.mocked(apiModule.apiFetch).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve([]),
-    });
+    } as Response);
   });
 
   afterEach(() => {
@@ -49,10 +49,10 @@ describe('Products Component', () => {
     // Stock is prefilled to 0, which is fine
 
     // Mock the POST request to return an error response
-    (apiModule.apiFetch as any).mockResolvedValueOnce({
+    vi.mocked(apiModule.apiFetch).mockResolvedValueOnce({
       ok: false,
       json: () => Promise.resolve({ error: 'Duplicate code' }),
-    });
+    } as Response);
 
     // Submit the form
     await user.click(screen.getByText('Save'));
@@ -82,7 +82,7 @@ describe('Products Component', () => {
     await user.type(screen.getAllByText(/Price \(ex GST\)/i)[1].nextElementSibling as HTMLElement, '200');
 
     // Mock the POST request to throw a network error
-    (apiModule.apiFetch as any).mockRejectedValueOnce(new Error('Network error'));
+    vi.mocked(apiModule.apiFetch).mockRejectedValueOnce(new Error('Network error'));
 
     // Submit the form
     await user.click(screen.getByText('Save'));
