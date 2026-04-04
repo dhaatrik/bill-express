@@ -46,11 +46,11 @@ describe('App Component', () => {
     expect(screen.queryByTestId('layout')).not.toBeInTheDocument();
   });
 
-  it('renders Layout and Dashboard when authenticated', () => {
+  it('renders Layout and Dashboard when authenticated', async () => {
     localStorage.setItem('isAuthenticated', 'true');
     render(<App />);
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
-    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('layout')).toBeInTheDocument();
+    expect(await screen.findByTestId('dashboard-page')).toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe('App Component', () => {
     await user.click(screen.getByText('Mock Login Button'));
 
     expect(localStorage.getItem('isAuthenticated')).toBe('true');
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
+    expect(await screen.findByTestId('layout')).toBeInTheDocument();
   });
 
   it('updates state and localStorage on logout', async () => {
@@ -73,7 +73,7 @@ describe('App Component', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
+    expect(await screen.findByTestId('layout')).toBeInTheDocument();
 
     await user.click(screen.getByText('Mock Logout Button'));
 
@@ -88,8 +88,8 @@ describe('App Component', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
-    expect(screen.getByTestId('products-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('layout')).toBeInTheDocument();
+    expect(await screen.findByTestId('products-page')).toBeInTheDocument();
   });
 
   it('redirects unknown routes to dashboard', async () => {
@@ -98,7 +98,7 @@ describe('App Component', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
-    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('layout')).toBeInTheDocument();
+    expect(await screen.findByTestId('dashboard-page')).toBeInTheDocument();
   });
 });
