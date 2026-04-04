@@ -76,6 +76,8 @@ app.use((req, res, next) => {
     res.json({ status: 'ok' });
   });
 
+const isValidAmount = (n: any) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+
   // Products
 app.get('/api/products', (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
@@ -125,8 +127,8 @@ app.get('/api/products', (req, res) => {
 app.post('/api/products', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
     if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
-        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
-        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+        typeof unit !== 'string' || !isValidAmount(price_ex_gst) || !isValidAmount(gst_rate) ||
+        typeof hsn_code !== 'string' || (stock !== undefined && !isValidAmount(stock))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
     try {
@@ -144,8 +146,8 @@ app.post('/api/products', (req, res) => {
 app.put('/api/products/:id', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
     if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
-        typeof unit !== 'string' || typeof price_ex_gst !== 'number' || typeof gst_rate !== 'number' ||
-        typeof hsn_code !== 'string' || (stock !== undefined && typeof stock !== 'number')) {
+        typeof unit !== 'string' || !isValidAmount(price_ex_gst) || !isValidAmount(gst_rate) ||
+        typeof hsn_code !== 'string' || (stock !== undefined && !isValidAmount(stock))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
     try {
@@ -250,8 +252,6 @@ app.put('/api/customers/:id', (req, res) => {
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
-
-const isValidAmount = (n: any) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
 
   // Invoices
 app.get('/api/invoices', (req, res) => {
@@ -433,6 +433,13 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
 
 app.put('/api/invoices/:id/payment', (req, res) => {
     const { payment_status, amount_paid } = req.body;
+    if (
+      (payment_status !== undefined && typeof payment_status !== 'string') ||
+      (amount_paid !== undefined && !isValidAmount(amount_paid))
+    ) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
+
     try {
       db.prepare('UPDATE invoices SET payment_status = ?, amount_paid = ? WHERE id = ?')
         .run(payment_status, amount_paid, req.params.id);
