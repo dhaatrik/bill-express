@@ -1,3 +1,3 @@
-## 2024-03-24 - SQLite Performance in Dashboard Queries
-**Learning:** Adding indexes on `(date, status)` for `invoices`, `(invoice_id)` for `invoice_items`, and `(customer_id)` for `invoices` significantly speeds up dashboard queries (`api/dashboard/analytics`) by 2x to 4x.
-**Action:** When adding foreign keys, always consider adding an index for them. Also, index columns used in WHERE clauses and aggregation groups like `date` and `status`.
+## 2025-03-05 - Route-Based Code Splitting
+**Learning:** In a single-page application built with React Router, statically importing all route components leads to a massive initial JavaScript bundle. When refactoring to use `React.lazy()` for code splitting, tests that rely on synchronous queries (like `getByTestId`) will fail because React Suspense introduces an asynchronous boundary.
+**Action:** When migrating route components to `React.lazy`, systematically update unit/integration tests to use asynchronous queries (`await screen.findByTestId`) or wrap suspense resolution in `act(...)`.
