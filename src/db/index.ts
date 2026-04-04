@@ -79,6 +79,11 @@ try { db.exec("ALTER TABLE invoices ADD COLUMN status TEXT DEFAULT 'active'"); }
 try { db.exec("ALTER TABLE invoices ADD COLUMN payment_status TEXT DEFAULT 'Paid'"); } catch (e) {}
 try { db.exec("ALTER TABLE invoices ADD COLUMN amount_paid REAL DEFAULT 0"); } catch (e) {}
 
+// Performance Indexes
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_date_status ON invoices(date, status)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON invoice_items(invoice_id)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id)');
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
