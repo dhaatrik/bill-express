@@ -9,6 +9,12 @@ export const app = express();
 
 app.use(express.json({ limit: '1mb' }));
 
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
   // Authentication Middleware
   let cachedAuth: string | null = null;
