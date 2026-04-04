@@ -63,7 +63,7 @@ describe('Products API', () => {
     it('should return empty list when no products exist', async () => {
       const response = await request(app).get('/api/products').set('Authorization', authHeader);
       expect(response.status).toBe(200);
-      expect(response.body).toEqual([]);
+      expect(response.body).toEqual({ data: [], total: 0 });
     });
 
     it('should return products sorted by name ASC', async () => {
@@ -74,12 +74,12 @@ describe('Products API', () => {
 
       const response = await request(app).get('/api/products').set('Authorization', authHeader);
       expect(response.status).toBe(200);
-      expect(response.body.length).toBe(3);
+      expect(response.body.data.length).toBe(3);
 
       // Order should be Apple, Banana, Test Product 1
-      expect(response.body[0].name).toBe('Apple');
-      expect(response.body[1].name).toBe('Banana');
-      expect(response.body[2].name).toBe('Test Product 1');
+      expect(response.body.data[0].name).toBe('Apple');
+      expect(response.body.data[1].name).toBe('Banana');
+      expect(response.body.data[2].name).toBe('Test Product 1');
     });
   });
 
