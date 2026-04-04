@@ -231,10 +231,10 @@ export default function Products() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => openEditModal(product)} className="text-cyan-400 hover:text-cyan-300 mr-4 transition-colors">
+                    <button onClick={() => openEditModal(product)} className="text-cyan-400 hover:text-cyan-300 mr-4 transition-colors" aria-label={`Edit ${product.name}`} title="Edit product">
                       <Edit className="h-5 w-5" />
                     </button>
-                    <button onClick={() => setDeleteConfirmId(product.id)} className="text-rose-500 hover:text-rose-400 transition-colors">
+                    <button onClick={() => setDeleteConfirmId(product.id)} className="text-rose-500 hover:text-rose-400 transition-colors" aria-label={`Delete ${product.name}`} title="Delete product">
                       <Trash2 className="h-5 w-5" />
                     </button>
                   </td>
