@@ -129,8 +129,8 @@ export default function Customers() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">₹{customer.lifetime_value.toFixed(2)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button onClick={handleSave} className="text-lime-400 hover:text-lime-300 mr-3"><Save className="h-5 w-5" /></button>
-                              <button onClick={() => setEditingId(null)} className="text-zinc-400 hover:text-zinc-300"><X className="h-5 w-5" /></button>
+                              <button onClick={handleSave} className="text-lime-400 hover:text-lime-300 mr-3" aria-label="Save changes" title="Save changes"><Save className="h-5 w-5" /></button>
+                              <button onClick={() => setEditingId(null)} className="text-zinc-400 hover:text-zinc-300" aria-label="Cancel editing" title="Cancel editing"><X className="h-5 w-5" /></button>
                             </td>
                           </>
                         ) : (
@@ -144,7 +144,7 @@ export default function Customers() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">{customer.gstin || '-'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">₹{customer.lifetime_value.toFixed(2)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button onClick={() => handleEdit(customer)} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors">
+                              <button onClick={() => handleEdit(customer)} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors" aria-label="Edit customer" title="Edit customer">
                                 <Edit2 className="h-5 w-5" />
                               </button>
                             </td>
