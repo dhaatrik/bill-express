@@ -1,11 +1,15 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
+import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
 import db from './src/db/index.js';
 import logger from './src/utils/logger.js';
 import { getNextInvoiceNumber } from './src/utils/invoice.js';
 
 export const app = express();
+
+// Trust the first proxy in front of the app (e.g., Nginx, Heroku) for accurate client IPs
+app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '1mb' }));
 
@@ -67,7 +71,18 @@ app.use((req, res, next) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   };
 
-  app.use('/api', (req, res, next) => {
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+    standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+    handler: (req, res, next, options) => {
+      logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
+      res.status(options.statusCode).json({ error: 'Too many requests, please try again later.' });
+    },
+  });
+
+  app.use('/api', apiLimiter, (req, res, next) => {
     return requireAuth(req, res, next);
   });
 
