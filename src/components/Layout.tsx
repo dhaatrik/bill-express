@@ -36,6 +36,8 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
           <button 
             className="lg:hidden text-zinc-400 hover:text-white"
             onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
+            title="Close menu"
           >
             <X className="h-6 w-6" />
           </button>
@@ -84,6 +86,8 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="text-zinc-400 hover:text-white focus:outline-none"
+            aria-label="Open menu"
+            title="Open menu"
           >
             <Menu className="h-6 w-6" />
           </button>
