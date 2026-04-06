@@ -60,8 +60,10 @@ export default function Customers() {
     link.click();
   };
 
+  // ⚡ Bolt: Cache lowercased search term to avoid redundant string allocations inside the O(N) filter loop
+  const searchLower = search.toLowerCase();
   const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.name.toLowerCase().includes(searchLower) ||
     (c.mobile && c.mobile.includes(search))
   );
 

@@ -75,25 +75,34 @@ export default function Invoices() {
     link.click();
   };
 
+  // ⚡ Bolt: Extract invariants (date instances, strings) from O(N) filter loop
+  const searchLower = search.toLowerCase();
+  const now = new Date();
+  const todayString = now.toDateString();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
   const filteredInvoices = invoices.filter((inv: Invoice) => {
-    const matchesSearch = inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-      (inv.customer_name && inv.customer_name.toLowerCase().includes(search.toLowerCase())) ||
+    const matchesSearch = inv.invoice_number.toLowerCase().includes(searchLower) ||
+      (inv.customer_name && inv.customer_name.toLowerCase().includes(searchLower)) ||
       (inv.customer_mobile && inv.customer_mobile.includes(search));
     
+    // ⚡ Bolt: Early return for expensive date parsing
+    if (!matchesSearch) return false;
+
     const matchesType = typeFilter === 'all' || inv.type === typeFilter;
+    if (!matchesType) return false;
     
-    let matchesDate = true;
     if (dateFilter !== 'all') {
       const invDate = new Date(inv.date);
-      const now = new Date();
       if (dateFilter === 'today') {
-        matchesDate = invDate.toDateString() === now.toDateString();
+        return invDate.toDateString() === todayString;
       } else if (dateFilter === 'month') {
-        matchesDate = invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear();
+        return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
       }
     }
 
-    return matchesSearch && matchesType && matchesDate;
+    return true;
   });
 
   return (
