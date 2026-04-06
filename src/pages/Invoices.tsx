@@ -215,7 +215,7 @@ export default function Invoices() {
                             <Eye className="h-5 w-5" />
                           </Link>
                           {invoice.status === 'active' && (
-                            <button onClick={() => handleCancel(invoice.id)} className="text-rose-500 hover:text-rose-400 inline-flex items-center transition-colors" title="Void Invoice">
+                            <button onClick={() => handleCancel(invoice.id)} className="text-rose-500 hover:text-rose-400 inline-flex items-center transition-colors" title="Void Invoice" aria-label="Void Invoice">
                               <XCircle className="h-5 w-5" />
                             </button>
                           )}
