@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useDeferredValue, useMemo } from 'react';
 import { Search, Edit2, Save, X, Download } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Customer } from '../types.js';
@@ -60,12 +60,17 @@ export default function Customers() {
     link.click();
   };
 
-  // ⚡ Bolt: Cache lowercased search term to avoid redundant string allocations inside the O(N) filter loop
-  const searchLower = search.toLowerCase();
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchLower) ||
-    (c.mobile && c.mobile.includes(search))
-  );
+  // ⚡ Bolt: Decouple input state from filtering logic using useDeferredValue
+  const deferredSearch = useDeferredValue(search);
+
+  const filteredCustomers = useMemo(() => {
+    // ⚡ Bolt: Cache lowercased search term to avoid redundant string allocations inside the O(N) filter loop
+    const searchLower = deferredSearch.toLowerCase();
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(searchLower) ||
+      (c.mobile && c.mobile.includes(deferredSearch))
+    );
+  }, [customers, deferredSearch]);
 
   return (
     <div className="space-y-6">
