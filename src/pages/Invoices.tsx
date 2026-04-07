@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useDeferredValue, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -75,35 +75,40 @@ export default function Invoices() {
     link.click();
   };
 
-  // ⚡ Bolt: Extract invariants (date instances, strings) from O(N) filter loop
-  const searchLower = search.toLowerCase();
-  const now = new Date();
-  const todayString = now.toDateString();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  // ⚡ Bolt: Decouple input state from filtering logic using useDeferredValue
+  const deferredSearch = useDeferredValue(search);
 
-  const filteredInvoices = invoices.filter((inv: Invoice) => {
-    const matchesSearch = inv.invoice_number.toLowerCase().includes(searchLower) ||
-      (inv.customer_name && inv.customer_name.toLowerCase().includes(searchLower)) ||
-      (inv.customer_mobile && inv.customer_mobile.includes(search));
-    
-    // ⚡ Bolt: Early return for expensive date parsing
-    if (!matchesSearch) return false;
+  const filteredInvoices = useMemo(() => {
+    // ⚡ Bolt: Extract invariants (date instances, strings) from O(N) filter loop
+    const searchLower = deferredSearch.toLowerCase();
+    const now = new Date();
+    const todayString = now.toDateString();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
-    const matchesType = typeFilter === 'all' || inv.type === typeFilter;
-    if (!matchesType) return false;
-    
-    if (dateFilter !== 'all') {
-      const invDate = new Date(inv.date);
-      if (dateFilter === 'today') {
-        return invDate.toDateString() === todayString;
-      } else if (dateFilter === 'month') {
-        return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
+    return invoices.filter((inv: Invoice) => {
+      const matchesSearch = inv.invoice_number.toLowerCase().includes(searchLower) ||
+        (inv.customer_name && inv.customer_name.toLowerCase().includes(searchLower)) ||
+        (inv.customer_mobile && inv.customer_mobile.includes(deferredSearch));
+
+      // ⚡ Bolt: Early return for expensive date parsing
+      if (!matchesSearch) return false;
+
+      const matchesType = typeFilter === 'all' || inv.type === typeFilter;
+      if (!matchesType) return false;
+
+      if (dateFilter !== 'all') {
+        const invDate = new Date(inv.date);
+        if (dateFilter === 'today') {
+          return invDate.toDateString() === todayString;
+        } else if (dateFilter === 'month') {
+          return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
+        }
       }
-    }
 
-    return true;
-  });
+      return true;
+    });
+  }, [invoices, deferredSearch, typeFilter, dateFilter]);
 
   return (
     <div className="space-y-6">
