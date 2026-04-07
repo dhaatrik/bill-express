@@ -9,3 +9,7 @@
 ## 2025-03-06 - useDeferredValue on List Filtering
 **Learning:** Decoupling search input state from expensive `O(N)` list filtering operations using `useDeferredValue` and `useMemo` successfully prevents main thread blocking and lag during typing, significantly improving perceived performance on large datasets.
 **Action:** Always combine `useDeferredValue` with `useMemo` for client-side text-based filtering of large arrays where server-side pagination/filtering isn't available or feasible.
+
+## 2025-03-06 - Consolidating Dashboard API Requests
+**Learning:** Having a separate, "fast" dedicated endpoint to fetch a single piece of aggregate data (like customer count) creates an unnecessary network roundtrip when the dashboard is already fetching analytics. Consolidating the count into the main analytics `SELECT` query reduces network payload, connection overhead, and client-side processing, speeding up the dashboard load time.
+**Action:** Prefer offloading data aggregation and filtering from the frontend to the backend using SQL, and consolidate multiple data-fetching requests into unified analytics endpoints whenever feasible.
