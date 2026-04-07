@@ -216,7 +216,7 @@ export default function Invoices() {
                           </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link to={`/invoices/${invoice.id}`} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors mr-3">
+                          <Link to={`/invoices/${invoice.id}`} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors mr-3" aria-label={`View invoice ${invoice.invoice_number}`} title="View invoice">
                             <Eye className="h-5 w-5" />
                           </Link>
                           {invoice.status === 'active' && (
