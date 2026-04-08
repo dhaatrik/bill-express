@@ -95,8 +95,14 @@ const isValidAmount = (n: any) => typeof n === 'number' && Number.isFinite(n) &&
 
   // Products
 app.get('/api/products', (req, res) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
+    let page = parseInt(req.query.page as string) || 1;
+    let limit = parseInt(req.query.limit as string) || 50;
+
+    // Security Enhancement: Prevent negative limits/offsets (DoS risk)
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 1;
+    if (limit > 1000) limit = 1000;
+
     const search = req.query.search as string || '';
     const category = req.query.category as string || 'All';
     const sort = req.query.sort as string || 'name_asc';
