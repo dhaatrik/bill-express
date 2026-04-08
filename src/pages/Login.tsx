@@ -44,8 +44,9 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
           )}
 
           <div>
-            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Username</label>
+            <label htmlFor="username" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Username</label>
             <input
+              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -55,8 +56,9 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Password</label>
+            <label htmlFor="password" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Password</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
