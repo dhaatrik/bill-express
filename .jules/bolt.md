@@ -13,3 +13,7 @@
 ## 2025-03-06 - Consolidating Dashboard API Requests
 **Learning:** Having a separate, "fast" dedicated endpoint to fetch a single piece of aggregate data (like customer count) creates an unnecessary network roundtrip when the dashboard is already fetching analytics. Consolidating the count into the main analytics `SELECT` query reduces network payload, connection overhead, and client-side processing, speeding up the dashboard load time.
 **Action:** Prefer offloading data aggregation and filtering from the frontend to the backend using SQL, and consolidate multiple data-fetching requests into unified analytics endpoints whenever feasible.
+
+## 2025-03-08 - Indexing frequently queried non-key columns
+**Learning:** Even simple analytics queries like "Top 5 products with low stock" (`WHERE stock <= 10 ORDER BY stock ASC LIMIT 5`) perform a full table scan (`SCAN products`) by default in SQLite. Creating an index on the filtered/sorted column changes this to an efficient index lookup (`SEARCH products USING INDEX`). We can verify this behavior using `EXPLAIN QUERY PLAN`.
+**Action:** When identifying backend performance bottlenecks in dashboard analytics or list views, use `EXPLAIN QUERY PLAN` to detect `SCAN` operations and add targeted indexes to convert them to `SEARCH` operations, significantly improving query speed on large datasets.
