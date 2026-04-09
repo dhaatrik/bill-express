@@ -17,3 +17,7 @@
 ## 2025-03-08 - Indexing frequently queried non-key columns
 **Learning:** Even simple analytics queries like "Top 5 products with low stock" (`WHERE stock <= 10 ORDER BY stock ASC LIMIT 5`) perform a full table scan (`SCAN products`) by default in SQLite. Creating an index on the filtered/sorted column changes this to an efficient index lookup (`SEARCH products USING INDEX`). We can verify this behavior using `EXPLAIN QUERY PLAN`.
 **Action:** When identifying backend performance bottlenecks in dashboard analytics or list views, use `EXPLAIN QUERY PLAN` to detect `SCAN` operations and add targeted indexes to convert them to `SEARCH` operations, significantly improving query speed on large datasets.
+
+## 2025-03-09 - SQLite Ordering Optimizations
+**Learning:** SQLite cannot use an index for `ORDER BY` if there isn't an index that exactly matches the query pattern. Specifically, if a query includes `WHERE category = ? ORDER BY name ASC`, an index solely on `name` (`idx_products_name`) will result in a fast scan but a slow `USE TEMP B-TREE FOR ORDER BY`. Conversely, an index solely on `category` (`idx_products_category`) will perform a fast search but STILL use a slow `TEMP B-TREE` for ordering.
+**Action:** To completely eliminate `TEMP B-TREE` sorting in SQLite for filtered + ordered queries, always create a **compound index** covering the `WHERE` clause first, followed by the `ORDER BY` columns: e.g., `CREATE INDEX idx_products_category_name ON products(category, name)`.
