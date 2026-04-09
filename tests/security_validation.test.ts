@@ -10,6 +10,19 @@ process.env.ADMIN_USERNAME = 'admin';
 process.env.ADMIN_PASSWORD = 'password';
 const authHeader = 'Basic ' + Buffer.from('admin:password').toString('base64');
 
+describe('Security Headers', () => {
+  it('should set essential security headers and hide X-Powered-By', async () => {
+    const response = await request(app).get('/api/health').set('Authorization', authHeader);
+    expect(response.headers['x-powered-by']).toBeUndefined();
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['x-frame-options']).toBe('DENY');
+    expect(response.headers['x-xss-protection']).toBe('1; mode=block');
+    expect(response.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains');
+    expect(response.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+    expect(response.headers['cache-control']).toBe('no-store');
+  });
+});
+
 let app: Express;
 
 beforeAll(async () => {
