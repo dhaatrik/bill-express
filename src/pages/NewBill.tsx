@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2, Loader2 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { Product } from '../types';
 
@@ -38,6 +38,7 @@ export default function NewBill() {
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'value' | 'percentage'>('value');
   const [amountPaid, setAmountPaid] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (searchQuery.length > 1) {
@@ -171,6 +172,7 @@ export default function NewBill() {
     };
 
     try {
+      setIsSaving(true);
       const res = await apiFetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -185,6 +187,8 @@ export default function NewBill() {
     } catch (err) {
       console.error(err);
       alert('Failed to save invoice');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -427,9 +431,17 @@ export default function NewBill() {
             <div className="mt-6">
               <button
                 onClick={handleSave}
-                className="w-full flex justify-center py-4 px-4 border-2 border-zinc-950 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider"
+                disabled={isSaving}
+                className="w-full flex justify-center items-center py-4 px-4 border-2 border-zinc-950 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider"
               >
-                Save & Generate Invoice
+                {isSaving ? (
+                  <>
+                    <Loader2 className="animate-spin h-6 w-6 mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save & Generate Invoice'
+                )}
               </button>
             </div>
           </div>
