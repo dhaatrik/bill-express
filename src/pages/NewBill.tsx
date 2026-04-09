@@ -264,6 +264,7 @@ export default function NewBill() {
               </div>
               <input
                 type="text"
+                aria-label="Search products to add"
                 placeholder="Search by name or code..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

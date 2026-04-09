@@ -93,6 +93,7 @@ export default function Customers() {
             </div>
             <input
               type="text"
+              aria-label="Search customers"
               className="block w-full pl-10 sm:text-sm"
               placeholder="Search by name or mobile..."
               value={search}

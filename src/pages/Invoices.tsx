@@ -131,6 +131,7 @@ export default function Invoices() {
             </div>
             <input
               type="text"
+              aria-label="Search invoices"
               className="block w-full pl-10 sm:text-sm"
               placeholder="Search by invoice #, name, or mobile..."
               value={search}
