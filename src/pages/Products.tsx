@@ -142,6 +142,7 @@ export default function Products() {
           </div>
           <input
             type="text"
+            aria-label="Search products"
             placeholder="Search by Code or Name..."
             value={searchQuery}
             onChange={(e) => {
