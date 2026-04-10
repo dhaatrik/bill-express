@@ -20,6 +20,7 @@ describe('Security Headers', () => {
     expect(response.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains');
     expect(response.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
     expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.headers['content-security-policy']).toBe("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; font-src 'self' data: https: http:; connect-src 'self'");
   });
 });
 
