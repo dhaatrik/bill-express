@@ -212,22 +212,20 @@ app.get('/api/customers/count', (req, res) => {
 
 app.get('/api/customers', (req, res) => {
     const search = req.query.search as string;
+    // ⚡ Bolt: Use scalar subquery instead of LEFT JOIN + GROUP BY for performance
+    // See .jules/bolt.md for details
     if (search) {
       const customers = db.prepare(`
-        SELECT c.*, COALESCE(SUM(i.grand_total), 0) as lifetime_value
+        SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
         FROM customers c
-        LEFT JOIN invoices i ON c.id = i.customer_id AND i.status = 'active'
         WHERE c.mobile LIKE ? OR c.name LIKE ?
-        GROUP BY c.id
         LIMIT 10
       `).all(`%${search}%`, `%${search}%`);
       res.json(customers);
     } else {
       const customers = db.prepare(`
-        SELECT c.*, COALESCE(SUM(i.grand_total), 0) as lifetime_value
+        SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
         FROM customers c
-        LEFT JOIN invoices i ON c.id = i.customer_id AND i.status = 'active'
-        GROUP BY c.id
         ORDER BY c.name ASC
       `).all();
       res.json(customers);

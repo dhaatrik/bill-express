@@ -85,6 +85,10 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON invoice_item
 db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock)');
 
+// ⚡ Bolt: Indexes to optimize /api/customers queries with scalar subqueries
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_customer_id_status ON invoices(customer_id, status)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name)');
+
 // ⚡ Bolt: Indexes to optimize /api/dashboard/analytics and /api/invoices queries
 // idx_invoices_status_date prevents 'USE TEMP B-TREE' when grouping by date on active invoices
 db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_status_date ON invoices(status, date)');
