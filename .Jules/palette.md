@@ -9,3 +9,6 @@
 ## 2024-04-09 - Accessible Search Inputs
 **Learning:** Found multiple search inputs (`placeholder="Search by..."`) across different views (Products, Invoices, Customers, New Bill) that were missing accessible labels, which makes screen reader navigation difficult.
 **Action:** Always ensure search inputs and other form fields without visible `<label>` tags have descriptive `aria-label` attributes to support assistive technologies.
+## 2024-04-10 - Add htmlFor and id attributes to modal form fields
+**Learning:** Found that the Add/Edit Product modal form in `src/pages/Products.tsx` used `<label>` elements without `htmlFor` attributes, and `<input>`/`<select>` elements without `id` attributes. This prevented screen readers from correctly associating the labels with the input fields, and prevented users from clicking the labels to focus the inputs.
+**Action:** When adding semantic HTML forms inside modals, always verify that explicit `<label htmlFor="id">` and `<input id="id">` pairs are used, especially since form grids often decouple the visual layout from the semantic connection.
