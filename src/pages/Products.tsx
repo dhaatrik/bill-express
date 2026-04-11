@@ -351,20 +351,20 @@ export default function Products() {
                   </h3>
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Code/SKU</label>
-                      <input type="text" required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <label htmlFor="product-code" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Code/SKU</label>
+                      <input id="product-code" type="text" required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">HSN Code</label>
-                      <input type="text" required value={formData.hsn_code} onChange={e => setFormData({...formData, hsn_code: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <label htmlFor="product-hsn" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">HSN Code</label>
+                      <input id="product-hsn" type="text" required value={formData.hsn_code} onChange={e => setFormData({...formData, hsn_code: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Name</label>
-                      <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <label htmlFor="product-name" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Name</label>
+                      <input id="product-name" type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Category</label>
-                      <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
+                      <label htmlFor="product-category" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Category</label>
+                      <select id="product-category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
                         <option>Fertilizer</option>
                         <option>Pesticide</option>
                         <option>Seed</option>
@@ -373,8 +373,8 @@ export default function Products() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Unit</label>
-                      <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
+                      <label htmlFor="product-unit" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Unit</label>
+                      <select id="product-unit" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
                         <option>Bag</option>
                         <option>Kg</option>
                         <option>Litre</option>
@@ -383,12 +383,12 @@ export default function Products() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Price (ex GST)</label>
-                      <input type="number" step="0.01" required value={formData.price_ex_gst} onChange={e => setFormData({...formData, price_ex_gst: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <label htmlFor="product-price" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Price (ex GST)</label>
+                      <input id="product-price" type="number" step="0.01" required value={formData.price_ex_gst} onChange={e => setFormData({...formData, price_ex_gst: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">GST Rate (%)</label>
-                      <select value={formData.gst_rate} onChange={e => setFormData({...formData, gst_rate: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
+                      <label htmlFor="product-gst" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">GST Rate (%)</label>
+                      <select id="product-gst" value={formData.gst_rate} onChange={e => setFormData({...formData, gst_rate: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
                         <option value="0">0%</option>
                         <option value="5">5%</option>
                         <option value="12">12%</option>
@@ -397,8 +397,8 @@ export default function Products() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Stock Quantity</label>
-                      <input type="number" step="0.01" required value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <label htmlFor="product-stock" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Stock Quantity</label>
+                      <input id="product-stock" type="number" step="0.01" required value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
                     </div>
                   </div>
                 </div>
