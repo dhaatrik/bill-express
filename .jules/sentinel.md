@@ -15,3 +15,8 @@
 **Vulnerability:** The `GET /api/products` endpoint parsed pagination query parameters `page` and `limit` but did not enforce any upper bound or negative-number checks.
 **Learning:** Unrestricted `limit` parameters can lead to a Denial of Service (DoS) attack if a malicious user requests millions of records in a single request, exhausting database connections and server memory. Negative parameters can also cause syntax errors or unexpected behavior.
 **Prevention:** Always sanitize and clamp pagination inputs on the backend (e.g., ensure `page >= 1` and `limit` is bounded between 1 and a safe maximum like 1000).
+## 2025-04-11 - Error Leakage in Catch Blocks
+
+**Vulnerability:** Several Express endpoints threw error messages to the client, leading to potential sensitive internal detail leaks.
+**Learning:** A standard practice in Node.js applications is to securely log detailed error information for the developer but only provide safe generic responses to the client. Using a generic `logger.error(err, 'Operation failed')` is incorrect since `err` wouldn't be properly serialized; Pino expects the error under the `err` key.
+**Prevention:** Instead of logging raw string interpolations, securely log internal errors using Pino's object format (e.g., `logger.error({ err }, 'Operation failed')`) and ensure that the response to the client (`res.status(400).json(...)`) is a generic JSON error response.

@@ -148,6 +148,7 @@ app.get('/api/products', (req, res) => {
       const products = db.prepare(query).all(...params, limit, (page - 1) * limit);
       res.json({ data: products, total: totalResult.count });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(500).json({ error: 'Failed to fetch products' });
     }
   });
@@ -167,6 +168,7 @@ app.post('/api/products', (req, res) => {
       const info = stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0);
       res.json({ id: info.lastInsertRowid });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -187,6 +189,7 @@ app.put('/api/products/:id', (req, res) => {
       stmt.run(code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock || 0, req.params.id);
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -196,6 +199,7 @@ app.delete('/api/products/:id', (req, res) => {
       db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -206,6 +210,7 @@ app.get('/api/customers/count', (req, res) => {
       const result = db.prepare('SELECT COUNT(*) as count FROM customers').get() as { count: number };
       res.json(result);
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -251,6 +256,7 @@ app.post('/api/customers', (req, res) => {
       const info = stmt.run(name, mobile, address, gstin, state);
       res.json({ id: info.lastInsertRowid });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -275,6 +281,7 @@ app.put('/api/customers/:id', (req, res) => {
       stmt.run(name, mobile, address, gstin, state, req.params.id);
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -416,6 +423,7 @@ app.post('/api/invoices', (req, res) => {
 
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -448,6 +456,7 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
       })();
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       // Allow specific error message for "Invoice not found or already cancelled"
       if (err instanceof Error && err.message === 'Invoice not found or already cancelled') {
         res.status(400).json({ error: err.message });
@@ -471,6 +480,7 @@ app.put('/api/invoices/:id/payment', (req, res) => {
         .run(payment_status, amount_paid, req.params.id);
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -497,6 +507,7 @@ app.put('/api/settings', (req, res) => {
       `).run(store_name, address, phone, gstin, state_code, logo_url);
       res.json({ success: true });
     } catch (err) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
@@ -544,6 +555,7 @@ app.get('/api/dashboard/analytics', (req, res) => {
 
       res.json({ ...stats, last7Days, topProducts, lowStock });
     } catch (err: any) {
+      logger.error({ err }, 'Operation failed');
       res.status(400).json({ error: 'An error occurred while processing the request' });
     }
   });
