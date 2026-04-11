@@ -163,6 +163,7 @@ export default function Products() {
                 setPage(1);
               }}
               className="block w-full sm:text-sm"
+              aria-label="Filter by category"
             >
               <option value="All">All Categories</option>
               <option value="Fertilizer">Fertilizer</option>
@@ -182,6 +183,7 @@ export default function Products() {
                 setPage(1);
               }}
               className="block w-full sm:text-sm"
+              aria-label="Sort products"
             >
               <option value="name_asc">Name (A-Z)</option>
               <option value="name_desc">Name (Z-A)</option>

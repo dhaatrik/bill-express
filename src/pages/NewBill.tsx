@@ -399,6 +399,7 @@ export default function NewBill() {
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value as 'value' | 'percentage')}
                     className="bg-zinc-950 border-2 border-zinc-800 rounded-lg text-zinc-300 text-sm font-bold focus:ring-lime-400 focus:border-lime-400 py-1 pl-2 pr-8"
+                    aria-label="Discount type"
                   >
                     <option value="value">₹</option>
                     <option value="percentage">%</option>
