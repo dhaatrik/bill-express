@@ -142,6 +142,7 @@ export default function Invoices() {
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
             className="block w-full sm:w-48 sm:text-sm"
+            aria-label="Filter by date"
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -151,6 +152,7 @@ export default function Invoices() {
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             className="block w-full sm:w-48 sm:text-sm"
+            aria-label="Filter by invoice type"
           >
             <option value="all">All Types</option>
             <option value="b2b">B2B</option>
