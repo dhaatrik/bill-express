@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
       const credentials = btoa(`${username}:${password}`);
@@ -25,6 +28,8 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
       }
     } catch (err) {
       setError('An error occurred while signing in');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,8 +54,9 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
               id="username"
               type="text"
               value={username}
+              disabled={isLoading}
               onChange={(e) => setUsername(e.target.value)}
-              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold"
+              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter username"
             />
           </div>
@@ -61,17 +67,26 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
               id="password"
               type="password"
               value={password}
+              disabled={isLoading}
               onChange={(e) => setPassword(e.target.value)}
-              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold"
+              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter password"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full flex justify-center py-4 px-4 border-2 border-zinc-950 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider mt-8"
+            disabled={isLoading}
+            className="w-full flex justify-center items-center py-4 px-4 border-2 border-zinc-950 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider mt-8"
           >
-            Sign In
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin h-6 w-6 mr-2" />
+                Signing In...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
       </div>
