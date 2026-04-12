@@ -14,7 +14,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
 
     try {
       const credentials = btoa(`${username}:${password}`);
-      const res = await fetch('/api/health', {
+      const res = await fetch('/api/login', {
         headers: {
           'Authorization': `Basic ${credentials}`
         }

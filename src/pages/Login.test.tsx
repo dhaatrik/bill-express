@@ -45,7 +45,7 @@ describe('Login Component', () => {
     const expectedCredentials = btoa('admin:admin123');
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/health', {
+      expect(global.fetch).toHaveBeenCalledWith('/api/login', {
         headers: {
           'Authorization': `Basic ${expectedCredentials}`
         }
