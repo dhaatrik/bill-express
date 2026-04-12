@@ -20,3 +20,11 @@
 **Vulnerability:** Several Express endpoints threw error messages to the client, leading to potential sensitive internal detail leaks.
 **Learning:** A standard practice in Node.js applications is to securely log detailed error information for the developer but only provide safe generic responses to the client. Using a generic `logger.error(err, 'Operation failed')` is incorrect since `err` wouldn't be properly serialized; Pino expects the error under the `err` key.
 **Prevention:** Instead of logging raw string interpolations, securely log internal errors using Pino's object format (e.g., `logger.error({ err }, 'Operation failed')`) and ensure that the response to the client (`res.status(400).json(...)`) is a generic JSON error response.
+
+## 2025-04-12 - Middleware Ordering in Express
+
+**Vulnerability:** Missing rate limiting on login mechanism allows brute force attacks. Applying the rate limiter after global authentication middleware means it only throttles *successful* logins, effectively leaving the system exposed to brute force credential stuffing.
+
+**Learning:** Express executes middleware sequentially. In an endpoint like `/api/login` where `requireAuth` validates Basic Auth headers, a `rateLimit` middleware must be attached to the route *before* `requireAuth` (`app.get('/api/login', loginLimiter, requireAuth, ...)`). If the rate limiter is placed after `requireAuth`, invalid attempts will be rejected early with a 401 response and the rate limiter will never count the failed attempts, completely defeating the purpose of the brute-force protection.
+
+**Prevention:** Always verify the execution order of Express middleware when dealing with security features like rate limiting and authentication. Limiting must occur before authentication to catch brute force attacks.

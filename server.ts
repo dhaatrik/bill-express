@@ -88,6 +88,24 @@ app.use((req, res, next) => {
     },
   });
 
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 5, // Limit each IP to 5 requests per `window` (here, per 15 minutes).
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+      logger.warn(`Login rate limit exceeded for IP: ${req.ip}`);
+      res.status(options.statusCode).json({ error: 'Too many login attempts, please try again later.' });
+    },
+  });
+
+  app.get('/api/login', loginLimiter, (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    return requireAuth(req, res, next);
+  }, (req, res) => {
+    res.json({ status: 'ok' });
+  });
+
   app.use('/api', apiLimiter, (req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
     return requireAuth(req, res, next);
