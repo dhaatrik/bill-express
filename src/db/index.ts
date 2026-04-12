@@ -98,8 +98,11 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_date_id ON invoices(date DESC, 
 // ⚡ Bolt: Indexes to optimize /api/products sorting and filtering
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_price_ex_gst ON products(price_ex_gst)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_category_name ON products(category, name)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_category_price ON products(category, price_ex_gst)');
+// ⚡ Bolt: Avoid TEMP B-TREE when sorting products by stock within a specific category
+db.exec('CREATE INDEX IF NOT EXISTS idx_products_category_stock ON products(category, stock)');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS settings (
