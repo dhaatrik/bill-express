@@ -12,6 +12,7 @@ export default function Settings() {
     state_code: '',
     logo_url: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     apiFetch('/api/settings')
@@ -23,6 +24,7 @@ export default function Settings() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       await apiFetch('/api/settings', {
         method: 'PUT',
@@ -33,6 +35,8 @@ export default function Settings() {
     } catch (err) {
       logger.error(err);
       alert('Failed to save settings');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -49,8 +53,9 @@ export default function Settings() {
             <input
               type="text"
               value={settings.store_name}
+              disabled={isSaving}
               onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-              className="block w-full sm:text-sm"
+              className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               required
             />
           </div>
@@ -59,9 +64,10 @@ export default function Settings() {
             <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Address</label>
             <textarea
               value={settings.address}
+              disabled={isSaving}
               onChange={(e) => setSettings({ ...settings, address: e.target.value })}
               rows={3}
-              className="block w-full sm:text-sm"
+              className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               required
             />
           </div>
@@ -72,8 +78,9 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.phone}
+                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
-                className="block w-full sm:text-sm"
+                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -82,8 +89,9 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.gstin}
+                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, gstin: e.target.value })}
-                className="block w-full sm:text-sm"
+                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -95,8 +103,9 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.state_code}
+                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, state_code: e.target.value })}
-                className="block w-full sm:text-sm"
+                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="e.g. 19 (West Bengal)"
                 required
               />
@@ -106,8 +115,9 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.logo_url || ''}
+                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
-                className="block w-full sm:text-sm"
+                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="https://..."
               />
             </div>
@@ -116,10 +126,20 @@ export default function Settings() {
           <div className="pt-6 border-t-2 border-zinc-800">
             <button
               type="submit"
-              className="w-full flex justify-center items-center py-4 px-4 border-2 border-zinc-950 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider"
+              disabled={isSaving}
+              className="w-full flex justify-center items-center py-4 px-4 border-2 border-zinc-950 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg font-black text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider"
             >
-              <Save className="-ml-1 mr-2 h-5 w-5" />
-              Save Settings
+              {isSaving ? (
+                <>
+                  <Save className="-ml-1 mr-2 h-5 w-5 animate-pulse" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="-ml-1 mr-2 h-5 w-5" />
+                  Save Settings
+                </>
+              )}
             </button>
           </div>
         </form>
