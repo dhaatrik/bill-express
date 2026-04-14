@@ -33,3 +33,7 @@
 ## 2025-04-12 - Index ordering for Category Filtering and Stock Sorting
 **Learning:** In the `/api/products` endpoint, when users filter by a specific category (e.g., `category = 'Fertilizer'`) and sort by stock quantity (e.g., `ORDER BY stock ASC`), an index solely on `category` (`idx_products_category`) will perform a fast search but STILL use a slow `TEMP B-TREE` for ordering.
 **Action:** To completely eliminate `TEMP B-TREE` sorting in SQLite for category filtered + stock ordered queries, always create a **compound index** covering the `WHERE` clause first, followed by the `ORDER BY` columns: e.g., `CREATE INDEX idx_products_category_stock ON products(category, stock)`.
+
+## 2025-05-18 - Memoizing heavy lists during debounced fetches
+**Learning:** When a React component updates state on every keystroke (e.g., `setSearchQuery` for a controlled input) but defers the actual `O(N)` filtering or API fetching using a debounce timeout (e.g., `setTimeout` inside `useEffect`), the component still re-renders completely on *every* keystroke. If the component renders a long list (like 50 table rows), this causes significant main-thread lag during typing, even though the data hasn't changed yet.
+**Action:** Always wrap heavy list rendering blocks (like mapped table rows) in a `useMemo` hook depending only on the data array and stable callbacks. Use `useCallback` to ensure any event handlers passed into the list (e.g., "Edit" or "Delete" buttons) have stable identities across renders.
