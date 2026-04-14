@@ -33,3 +33,7 @@
 ## 2025-04-12 - Index ordering for Category Filtering and Stock Sorting
 **Learning:** In the `/api/products` endpoint, when users filter by a specific category (e.g., `category = 'Fertilizer'`) and sort by stock quantity (e.g., `ORDER BY stock ASC`), an index solely on `category` (`idx_products_category`) will perform a fast search but STILL use a slow `TEMP B-TREE` for ordering.
 **Action:** To completely eliminate `TEMP B-TREE` sorting in SQLite for category filtered + stock ordered queries, always create a **compound index** covering the `WHERE` clause first, followed by the `ORDER BY` columns: e.g., `CREATE INDEX idx_products_category_stock ON products(category, stock)`.
+
+## 2025-04-14 - Expression Indexing for GROUP BY
+**Learning:** In SQLite, when grouping by a transformed column (like a date substring) such as `GROUP BY date(date)`, an index on `(status, date)` will still result in an inefficient `USE TEMP B-TREE FOR GROUP BY` sort. Even if you create an expression index like `CREATE INDEX idx ON invoices(status, substr(date, 1, 10))`, SQLite will only use it to eliminate the sort if the `WHERE` clause, `GROUP BY` clause, and `ORDER BY` clause *all* utilize that exact same expression.
+**Action:** To completely eliminate slow `TEMP B-TREE` sorts when grouping by a transformed column, create an exact expression index and strictly ensure the `WHERE`, `GROUP BY`, and `ORDER BY` clauses use the exact same string expression (e.g., `substr(date, 1, 10)`).
