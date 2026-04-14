@@ -544,11 +544,11 @@ app.get('/api/dashboard/analytics', (req, res) => {
 
       // Sales over last 7 days
       const last7Days = db.prepare(`
-        SELECT date(date) as day, SUM(grand_total) as sales
+        SELECT substr(date, 1, 10) as day, SUM(grand_total) as sales
         FROM invoices
-        WHERE date >= date('now', '-7 days') AND status = 'active'
-        GROUP BY date(date)
-        ORDER BY date(date) ASC
+        WHERE substr(date, 1, 10) >= date('now', '-7 days') AND status = 'active'
+        GROUP BY substr(date, 1, 10)
+        ORDER BY day ASC
       `).all();
 
       // Top 5 products
