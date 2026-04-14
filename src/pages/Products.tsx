@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Product } from '../types.js';
@@ -100,7 +100,7 @@ export default function Products() {
     }
   };
 
-  const openEditModal = (product: Product) => {
+  const openEditModal = useCallback((product: Product) => {
     setEditingProduct(product);
     setFormData({
       code: product.code,
@@ -113,7 +113,38 @@ export default function Products() {
       stock: product.stock?.toString() || '0'
     });
     setIsModalOpen(true);
-  };
+  }, []);
+
+  // ⚡ Bolt: Memoize the 50 table rows to prevent re-rendering them on every single keystroke in the search input
+  const renderedProducts = useMemo(() => {
+    return products.map((product: Product) => (
+      <tr key={product.id} className="hover:bg-zinc-800/50 transition-colors">
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{product.code}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-300">{product.name}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+            {product.category}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-zinc-500">{product.hsn_code}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-lime-400 text-right">₹{product.price_ex_gst.toFixed(2)}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right">{product.gst_rate}%</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold">
+          <span className={product.stock <= 10 ? 'text-rose-500' : 'text-zinc-300'}>
+            {product.stock} {product.unit}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <button onClick={() => openEditModal(product)} className="text-cyan-400 hover:text-cyan-300 mr-4 transition-colors" aria-label={`Edit ${product.name}`} title="Edit product">
+            <Edit className="h-5 w-5" />
+          </button>
+          <button onClick={() => setDeleteConfirmId(product.id)} className="text-rose-500 hover:text-rose-400 transition-colors" aria-label={`Delete ${product.name}`} title="Delete product">
+            <Trash2 className="h-5 w-5" />
+          </button>
+        </td>
+      </tr>
+    ));
+  }, [products, openEditModal, setDeleteConfirmId]);
 
   const totalPages = Math.ceil(totalProducts / limit);
 
@@ -216,33 +247,7 @@ export default function Products() {
                 </td>
               </tr>
             ) : (
-              products.map((product: Product) => (
-                <tr key={product.id} className="hover:bg-zinc-800/50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{product.code}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-300">{product.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-zinc-500">{product.hsn_code}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-lime-400 text-right">₹{product.price_ex_gst.toFixed(2)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right">{product.gst_rate}%</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold">
-                    <span className={product.stock <= 10 ? 'text-rose-500' : 'text-zinc-300'}>
-                      {product.stock} {product.unit}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => openEditModal(product)} className="text-cyan-400 hover:text-cyan-300 mr-4 transition-colors" aria-label={`Edit ${product.name}`} title="Edit product">
-                      <Edit className="h-5 w-5" />
-                    </button>
-                    <button onClick={() => setDeleteConfirmId(product.id)} className="text-rose-500 hover:text-rose-400 transition-colors" aria-label={`Delete ${product.name}`} title="Delete product">
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))
+              renderedProducts
             )}
           </tbody>
         </table>
