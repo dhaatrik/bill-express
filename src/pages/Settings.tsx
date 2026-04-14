@@ -53,11 +53,10 @@ export default function Settings() {
             <input
               type="text"
               value={settings.store_name}
-              disabled={isSaving}
               onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
               className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              required
               disabled={isSaving}
+              required
             />
           </div>
 
@@ -65,12 +64,11 @@ export default function Settings() {
             <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Address</label>
             <textarea
               value={settings.address}
-              disabled={isSaving}
               onChange={(e) => setSettings({ ...settings, address: e.target.value })}
               rows={3}
               className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              required
               disabled={isSaving}
+              required
             />
           </div>
 
@@ -80,11 +78,10 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.phone}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                required
                 disabled={isSaving}
+                required
               />
             </div>
             <div>
@@ -92,11 +89,10 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.gstin}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, gstin: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                required
                 disabled={isSaving}
+                required
               />
             </div>
           </div>
@@ -107,12 +103,11 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.state_code}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, state_code: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="e.g. 19 (West Bengal)"
-                required
                 disabled={isSaving}
+                required
               />
             </div>
             <div>
@@ -120,7 +115,6 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.logo_url || ''}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="https://..."
