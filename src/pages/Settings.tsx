@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { logger } from '../utils/logger.js';
 
@@ -53,9 +53,9 @@ export default function Settings() {
             <input
               type="text"
               value={settings.store_name}
-              disabled={isSaving}
               onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
               className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSaving}
               required
             />
           </div>
@@ -64,10 +64,10 @@ export default function Settings() {
             <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Address</label>
             <textarea
               value={settings.address}
-              disabled={isSaving}
               onChange={(e) => setSettings({ ...settings, address: e.target.value })}
               rows={3}
               className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSaving}
               required
             />
           </div>
@@ -78,9 +78,9 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.phone}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSaving}
                 required
               />
             </div>
@@ -89,9 +89,9 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.gstin}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, gstin: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSaving}
                 required
               />
             </div>
@@ -103,10 +103,10 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.state_code}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, state_code: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="e.g. 19 (West Bengal)"
+                disabled={isSaving}
                 required
               />
             </div>
@@ -115,10 +115,10 @@ export default function Settings() {
               <input
                 type="text"
                 value={settings.logo_url || ''}
-                disabled={isSaving}
                 onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
                 className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="https://..."
+                disabled={isSaving}
               />
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function Settings() {
             >
               {isSaving ? (
                 <>
-                  <Save className="-ml-1 mr-2 h-5 w-5 animate-pulse" />
+                  <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
                   Saving...
                 </>
               ) : (
