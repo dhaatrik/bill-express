@@ -165,9 +165,9 @@ app.get('/api/products', (req, res) => {
       const totalResult = db.prepare(countQuery).get(...params) as { count: number };
       const products = db.prepare(query).all(...params, limit, (page - 1) * limit);
       res.json({ data: products, total: totalResult.count });
-    } catch (err) {
+    } catch (err: any) {
       logger.error({ err }, 'Operation failed');
-      res.status(500).json({ error: 'Failed to fetch products' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -187,7 +187,10 @@ app.post('/api/products', (req, res) => {
       res.json({ id: info.lastInsertRowid });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(400).json({ error: 'An error occurred while processing the request' });
+      }
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -208,7 +211,7 @@ app.put('/api/products/:id', (req, res) => {
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -218,7 +221,7 @@ app.delete('/api/products/:id', (req, res) => {
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -229,7 +232,7 @@ app.get('/api/customers/count', (req, res) => {
       res.json(result);
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -275,7 +278,7 @@ app.post('/api/customers', (req, res) => {
       res.json({ id: info.lastInsertRowid });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -300,7 +303,7 @@ app.put('/api/customers/:id', (req, res) => {
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -442,7 +445,7 @@ app.post('/api/invoices', (req, res) => {
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -479,7 +482,7 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
       if (err instanceof Error && err.message === 'Invoice not found or already cancelled') {
         res.status(400).json({ error: err.message });
       } else {
-        res.status(400).json({ error: 'An error occurred while processing the request' });
+        res.status(500).json({ error: 'An error occurred while processing the request' });
       }
     }
   });
@@ -499,7 +502,7 @@ app.put('/api/invoices/:id/payment', (req, res) => {
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -526,7 +529,7 @@ app.put('/api/settings', (req, res) => {
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
@@ -576,12 +579,21 @@ app.get('/api/dashboard/analytics', (req, res) => {
       res.json({ ...stats, last7Days, topProducts, lowStock });
     } catch (err: any) {
       logger.error({ err }, 'Operation failed');
-      res.status(400).json({ error: 'An error occurred while processing the request' });
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
 async function startServer() {
   const PORT = 3000;
+
+  // Global Error Handler to prevent stack trace leaks on unexpected errors
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    logger.error({ err }, 'Unhandled exception');
+    if (err.type === 'entity.too.large' || err.type === 'PayloadTooLargeError') {
+      return res.status(413).json({ error: 'Payload Too Large' });
+    }
+    res.status(500).json({ error: 'An unexpected error occurred' });
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
