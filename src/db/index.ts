@@ -97,6 +97,9 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_status_day ON invoices(status, 
 // idx_invoices_date_id optimizes the default sort order for the invoices list
 db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_date_id ON invoices(date DESC, id DESC)');
 
+// ⚡ Bolt: Indexes to optimize /api/dashboard/analytics Top Products subquery
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoice_items_product_id_invoice_id ON invoice_items(product_id, invoice_id)');
+
 // ⚡ Bolt: Indexes to optimize /api/products sorting and filtering
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_price_ex_gst ON products(price_ex_gst)');

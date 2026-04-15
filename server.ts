@@ -552,11 +552,13 @@ app.get('/api/dashboard/analytics', (req, res) => {
       `).all();
 
       // Top 5 products
+      // ⚡ Bolt: Replaced JOIN with EXISTS subquery to avoid large intermediate result sets and speed up aggregation
       const topProducts = db.prepare(`
         SELECT product_name as name, SUM(quantity) as qty, SUM(total) as revenue
         FROM invoice_items ii
-        JOIN invoices i ON ii.invoice_id = i.id
-        WHERE i.status = 'active'
+        WHERE EXISTS (
+          SELECT 1 FROM invoices i WHERE i.id = ii.invoice_id AND i.status = 'active'
+        )
         GROUP BY product_id
         ORDER BY qty DESC
         LIMIT 5
