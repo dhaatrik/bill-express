@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Product } from '../types.js';
 
@@ -19,6 +19,8 @@ export default function Products() {
   
   // Delete confirmation state
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     code: '',
@@ -94,9 +96,14 @@ export default function Products() {
 
   const confirmDelete = async () => {
     if (deleteConfirmId !== null) {
-      await apiFetch(`/api/products/${deleteConfirmId}`, { method: 'DELETE' });
-      setDeleteConfirmId(null);
-      fetchProducts();
+      setIsDeleting(true);
+      try {
+        await apiFetch(`/api/products/${deleteConfirmId}`, { method: 'DELETE' });
+        setDeleteConfirmId(null);
+        fetchProducts();
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -330,10 +337,11 @@ export default function Products() {
                 </div>
               </div>
               <div className="bg-zinc-950/50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse border-t border-zinc-800">
-                <button type="button" onClick={confirmDelete} className="w-full inline-flex justify-center rounded-xl border-2 border-zinc-950 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-4 py-2 bg-rose-500 text-base font-bold text-zinc-950 hover:bg-rose-400 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:ml-3 sm:w-auto sm:text-sm">
-                  Delete
+                <button type="button" disabled={isDeleting} onClick={confirmDelete} className="w-full inline-flex items-center justify-center rounded-xl border-2 border-zinc-950 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-4 py-2 bg-rose-500 text-base font-bold text-zinc-950 hover:bg-rose-400 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  {isDeleting && <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />}
+                  {isDeleting ? 'Deleting...' : 'Delete'}
                 </button>
-                <button type="button" onClick={() => setDeleteConfirmId(null)} className="mt-3 w-full inline-flex justify-center rounded-xl border-2 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-4 py-2 bg-zinc-800 text-base font-bold text-white hover:bg-zinc-700 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                <button type="button" disabled={isDeleting} onClick={() => setDeleteConfirmId(null)} className="mt-3 w-full inline-flex justify-center rounded-xl border-2 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-4 py-2 bg-zinc-800 text-base font-bold text-white hover:bg-zinc-700 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   Cancel
                 </button>
               </div>
@@ -359,19 +367,19 @@ export default function Products() {
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="product-code" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Code/SKU</label>
-                      <input id="product-code" type="text" required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <input id="product-code" type="text" required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                     <div>
                       <label htmlFor="product-hsn" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">HSN Code</label>
-                      <input id="product-hsn" type="text" required value={formData.hsn_code} onChange={e => setFormData({...formData, hsn_code: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <input id="product-hsn" type="text" required value={formData.hsn_code} onChange={e => setFormData({...formData, hsn_code: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                     <div className="col-span-2">
                       <label htmlFor="product-name" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Name</label>
-                      <input id="product-name" type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <input id="product-name" type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                     <div>
                       <label htmlFor="product-category" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Category</label>
-                      <select id="product-category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
+                      <select id="product-category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed">
                         <option>Fertilizer</option>
                         <option>Pesticide</option>
                         <option>Seed</option>
@@ -381,7 +389,7 @@ export default function Products() {
                     </div>
                     <div>
                       <label htmlFor="product-unit" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Unit</label>
-                      <select id="product-unit" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
+                      <select id="product-unit" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed">
                         <option>Bag</option>
                         <option>Kg</option>
                         <option>Litre</option>
@@ -391,11 +399,11 @@ export default function Products() {
                     </div>
                     <div>
                       <label htmlFor="product-price" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Price (ex GST)</label>
-                      <input id="product-price" type="number" step="0.01" required value={formData.price_ex_gst} onChange={e => setFormData({...formData, price_ex_gst: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <input id="product-price" type="number" step="0.01" required value={formData.price_ex_gst} onChange={e => setFormData({...formData, price_ex_gst: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                     <div>
                       <label htmlFor="product-gst" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">GST Rate (%)</label>
-                      <select id="product-gst" value={formData.gst_rate} onChange={e => setFormData({...formData, gst_rate: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none">
+                      <select id="product-gst" value={formData.gst_rate} onChange={e => setFormData({...formData, gst_rate: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="0">0%</option>
                         <option value="5">5%</option>
                         <option value="12">12%</option>
@@ -405,15 +413,16 @@ export default function Products() {
                     </div>
                     <div>
                       <label htmlFor="product-stock" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Stock Quantity</label>
-                      <input id="product-stock" type="number" step="0.01" required value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none" />
+                      <input id="product-stock" type="number" step="0.01" required value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} disabled={isSaving} className="block w-full sm:text-sm bg-zinc-950 border-2 border-zinc-800 rounded-lg p-2 text-white focus:ring-lime-400 focus:border-lime-400 outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                     </div>
                   </div>
                 </div>
                 <div className="bg-zinc-950/50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse border-t border-zinc-800">
-                  <button type="submit" className="w-full inline-flex justify-center rounded-xl border-2 border-zinc-950 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-2 bg-lime-400 text-base font-bold text-zinc-950 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:ml-3 sm:w-auto sm:text-sm">
-                    Save
+                  <button type="submit" disabled={isSaving} className="w-full inline-flex items-center justify-center rounded-xl border-2 border-zinc-950 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-2 bg-lime-400 text-base font-bold text-zinc-950 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    {isSaving && <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />}
+                    {isSaving ? 'Saving...' : 'Save'}
                   </button>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-xl border-2 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-2 bg-zinc-800 text-base font-bold text-white hover:bg-zinc-700 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                  <button type="button" disabled={isSaving} onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-xl border-2 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-2 bg-zinc-800 text-base font-bold text-white hover:bg-zinc-700 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:translate-x-0 disabled:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                     Cancel
                   </button>
                 </div>
