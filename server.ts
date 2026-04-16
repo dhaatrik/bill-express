@@ -546,12 +546,13 @@ app.get('/api/dashboard/analytics', (req, res) => {
       `).get() as { todayInvoices: number, todaySales: number, totalProducts: number, totalCustomers: number };
 
       // Sales over last 7 days
+      // ⚡ Bolt: Use exact string expression in ORDER BY to perfectly match idx_invoices_status_day index and prevent TEMP B-TREE sort
       const last7Days = db.prepare(`
         SELECT substr(date, 1, 10) as day, SUM(grand_total) as sales
         FROM invoices
-        WHERE substr(date, 1, 10) >= date('now', '-7 days') AND status = 'active'
+        WHERE status = 'active' AND substr(date, 1, 10) >= date('now', '-7 days')
         GROUP BY substr(date, 1, 10)
-        ORDER BY day ASC
+        ORDER BY substr(date, 1, 10) ASC
       `).all();
 
       // Top 5 products
