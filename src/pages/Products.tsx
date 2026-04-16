@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Loader2, Package } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Product } from '../types.js';
 
@@ -249,8 +249,50 @@ export default function Products() {
           <tbody className="bg-zinc-900 divide-y divide-zinc-800">
             {products.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-zinc-500 font-medium">
-                  No products found matching your criteria.
+                <td colSpan={8} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    {(searchQuery !== '' || categoryFilter !== 'All') ? (
+                      <>
+                        <div className="bg-zinc-800/50 p-4 rounded-full mb-4">
+                          <Search className="h-8 w-8 text-zinc-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">No matching products</h3>
+                        <p className="text-zinc-400 text-sm mb-6 max-w-sm mx-auto">
+                          We couldn't find any products matching your current search and filter criteria.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setSearchQuery('');
+                            setCategoryFilter('All');
+                          }}
+                          className="inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-bold rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-zinc-800/50 p-4 rounded-full mb-4">
+                          <Package className="h-8 w-8 text-zinc-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">No products yet</h3>
+                        <p className="text-zinc-400 text-sm mb-6 max-w-sm mx-auto">
+                          Get started by adding your first product to the inventory.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setEditingProduct(null);
+                            setFormData({ code: '', name: '', category: 'Fertilizer', unit: 'Bag', price_ex_gst: '', gst_rate: '5', hsn_code: '', stock: '0' });
+                            setIsModalOpen(true);
+                          }}
+                          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+                        >
+                          <Plus className="-ml-1 mr-2 h-4 w-4" />
+                          Add Product
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (

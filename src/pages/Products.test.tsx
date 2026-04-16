@@ -39,7 +39,7 @@ describe('Products Component', () => {
     });
 
     // Open add product modal
-    await user.click(screen.getByText('Add Product'));
+    await user.click(screen.getAllByText('Add Product')[0]);
 
     // Fill the required fields
     await user.type(screen.getByText(/Code\/SKU/i).nextElementSibling as HTMLElement, 'P001');
@@ -73,7 +73,7 @@ describe('Products Component', () => {
     });
 
     // Open add product modal
-    await user.click(screen.getByText('Add Product'));
+    await user.click(screen.getAllByText('Add Product')[0]);
 
     // Fill the required fields
     await user.type(screen.getByText(/Code\/SKU/i).nextElementSibling as HTMLElement, 'P002');
