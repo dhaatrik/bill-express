@@ -247,6 +247,48 @@ app.delete('/api/products/:id', (req, res) => {
     }
   });
 
+app.get('/api/products/:id/transactions', (req, res) => {
+    try {
+      const transactions = db.prepare(`
+        SELECT * FROM inventory_transactions 
+        WHERE product_id = ? 
+        ORDER BY date DESC
+      `).all(req.params.id);
+      res.json(transactions);
+    } catch (err) {
+      logger.error({ err }, 'Operation failed');
+      res.status(500).json({ error: 'An error occurred while processing the request' });
+    }
+  });
+
+app.post('/api/products/:id/stock-adjustment', (req, res) => {
+    const { type, quantity, reason } = req.body;
+    if (typeof type !== 'string' || typeof quantity !== 'number' || (reason !== undefined && typeof reason !== 'string')) {
+      return res.status(400).json({ error: 'Invalid or missing required fields' });
+    }
+
+    try {
+      db.transaction(() => {
+        const productId = req.params.id;
+        
+        // Update product stock
+        db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?').run(quantity, productId);
+        
+        // Record transaction
+        db.prepare(`
+          INSERT INTO inventory_transactions (product_id, type, quantity, reason)
+          VALUES (?, ?, ?, ?)
+        `).run(productId, type, quantity, reason || null);
+      })();
+
+      const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(req.params.id) as { stock: number };
+      res.json({ success: true, newStock: product.stock });
+    } catch (err) {
+      logger.error({ err }, 'Operation failed');
+      res.status(500).json({ error: 'An error occurred while processing the request' });
+    }
+  });
+
   // Customers
 app.get('/api/customers/count', (req, res) => {
     try {
