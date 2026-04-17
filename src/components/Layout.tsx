@@ -60,7 +60,7 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
               >
                 <item.icon
                   className={clsx(
-                    'mr-3 flex-shrink-0 h-5 w-5',
+                    'mr-3 shrink-0 h-5 w-5',
                     isActive ? 'text-zinc-950' : 'text-zinc-500 group-hover:text-zinc-300'
                   )}
                   aria-hidden="true"
@@ -73,7 +73,7 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
 
         <div className="p-4 border-t border-zinc-800">
           <button onClick={onLogout} className="flex items-center w-full px-4 py-3 text-sm font-semibold text-zinc-400 rounded-xl hover:bg-zinc-800 hover:text-zinc-100 transition-colors">
-            <LogOut className="mr-3 flex-shrink-0 h-5 w-5 text-zinc-500" />
+            <LogOut className="mr-3 shrink-0 h-5 w-5 text-zinc-500" />
             Logout
           </button>
         </div>

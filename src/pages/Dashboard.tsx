@@ -57,7 +57,7 @@ export default function Dashboard() {
         <div className="bg-zinc-900 border-2 border-zinc-800 overflow-hidden rounded-2xl hover:border-lime-400 transition-colors">
           <div className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-lime-400/10 p-3 rounded-xl">
+              <div className="shrink-0 bg-lime-400/10 p-3 rounded-xl">
                 <TrendingUp className="h-6 w-6 text-lime-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -77,7 +77,7 @@ export default function Dashboard() {
         <div className="bg-zinc-900 border-2 border-zinc-800 overflow-hidden rounded-2xl hover:border-cyan-400 transition-colors">
           <div className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-cyan-400/10 p-3 rounded-xl">
+              <div className="shrink-0 bg-cyan-400/10 p-3 rounded-xl">
                 <Receipt className="h-6 w-6 text-cyan-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -97,7 +97,7 @@ export default function Dashboard() {
         <div className="bg-zinc-900 border-2 border-zinc-800 overflow-hidden rounded-2xl hover:border-fuchsia-400 transition-colors">
           <div className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-fuchsia-400/10 p-3 rounded-xl">
+              <div className="shrink-0 bg-fuchsia-400/10 p-3 rounded-xl">
                 <Package className="h-6 w-6 text-fuchsia-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -117,7 +117,7 @@ export default function Dashboard() {
         <div className="bg-zinc-900 border-2 border-zinc-800 overflow-hidden rounded-2xl hover:border-amber-400 transition-colors">
           <div className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-amber-400/10 p-3 rounded-xl">
+              <div className="shrink-0 bg-amber-400/10 p-3 rounded-xl">
                 <Users className="h-6 w-6 text-amber-400" />
               </div>
               <div className="ml-5 w-0 flex-1">

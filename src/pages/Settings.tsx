@@ -9,7 +9,8 @@ export default function Settings() {
     phone: '',
     gstin: '',
     state_code: '',
-    logo_url: ''
+    logo_url: '',
+    low_stock_threshold: 10
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -110,16 +111,30 @@ export default function Settings() {
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Logo URL (Optional)</label>
+              <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Low Stock Threshold</label>
               <input
-                type="text"
-                value={settings.logo_url || ''}
-                onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
+                type="number"
+                value={settings.low_stock_threshold}
+                onChange={(e) => setSettings({ ...settings, low_stock_threshold: parseInt(e.target.value) || 0 })}
                 className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="https://..."
+                placeholder="e.g. 10"
                 disabled={isSaving}
+                min="0"
+                required
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Logo URL (Optional)</label>
+            <input
+              type="text"
+              value={settings.logo_url || ''}
+              onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
+              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="https://..."
+              disabled={isSaving}
+            />
           </div>
 
           <div className="pt-6 border-t-2 border-zinc-800">
