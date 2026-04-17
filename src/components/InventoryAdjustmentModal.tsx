@@ -82,7 +82,7 @@ export default function InventoryAdjustmentModal({ product, onClose, onSuccess }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto">
+    <div className="fixed inset-0 z-60 overflow-y-auto">
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 transition-opacity z-0" aria-hidden="true" onClick={onClose}>
           <div className="absolute inset-0 bg-zinc-950 opacity-75 backdrop-blur-sm"></div>
