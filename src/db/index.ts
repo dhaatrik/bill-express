@@ -69,6 +69,16 @@ db.exec(`
     FOREIGN KEY(invoice_id) REFERENCES invoices(id),
     FOREIGN KEY(product_id) REFERENCES products(id)
   );
+
+  CREATE TABLE IF NOT EXISTS inventory_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    type TEXT NOT NULL, -- 'restock', 'sale', 'adjustment', 'damage', 'return'
+    quantity REAL NOT NULL,
+    reason TEXT,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(product_id) REFERENCES products(id)
+  );
 `);
 
 try { db.exec("ALTER TABLE customers ADD COLUMN state TEXT"); } catch (e) {}
@@ -84,6 +94,7 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_date_status ON invoices(date, s
 db.exec('CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON invoice_items(invoice_id)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_inventory_transactions_product_id ON inventory_transactions(product_id)');
 
 // ⚡ Bolt: Indexes to optimize /api/customers queries with scalar subqueries
 db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_customer_id_status ON invoices(customer_id, status)');
