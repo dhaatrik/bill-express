@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import NewBill from './NewBill';
+import NewBill from '../../src/pages/NewBill';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {

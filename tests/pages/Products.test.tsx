@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Products from './Products';
-import * as apiModule from '../utils/api.js';
+import Products from '../../src/pages/Products';
+import * as apiModule from '../../src/utils/api.js';
 
-vi.mock('../utils/api.js', () => ({
+vi.mock('../../src/utils/api.js', () => ({
   apiFetch: vi.fn(),
 }));
 

@@ -1,4 +1,0 @@
-## 2023-10-27 - Implement Global Error Handler and Secure Catch Blocks
-**Vulnerability:** Express unhandled errors or explicitly returned raw error objects (e.g., SQLite constraint failures) could leak server stack traces or sensitive database structure information in API responses.
-**Learning:** Default Express error handling sends HTML with stack traces in non-production, and returning raw `err` properties in catch blocks is a risky practice.
-**Prevention:** Implement a global Express error-handling middleware (`app.use((err, req, res, next) => {...})`) to intercept unexpected exceptions and strictly control the JSON response payload. Update all route catch blocks to return generic 500 error messages (e.g., `'An unexpected error occurred'`), or specifically handle known database constraints (e.g., `SQLITE_CONSTRAINT_UNIQUE`) and return appropriate 400 Bad Request errors.
