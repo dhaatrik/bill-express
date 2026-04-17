@@ -1,9 +1,9 @@
 # Implementation Plan: Enhance product inventory tracking
 
 ## Phase 1: Database and Backend API
-- [ ] Task: Create `inventory_transactions` database table
-    - [ ] Write Tests: Unit tests for new DB schema and queries
-    - [ ] Implement Feature: Update SQLite schema and data access methods
+- [x] Task: Create inventory_transactions database table [8a4c4dd]
+    - [x] Write Tests: Unit tests for new DB schema and queries
+    - [x] Implement Feature: Update SQLite schema and data access methods
 - [ ] Task: Implement REST API for stock transactions
     - [ ] Write Tests: Integration tests for stock transaction endpoints
     - [ ] Implement Feature: Create Express routes for getting and adding stock transactions
