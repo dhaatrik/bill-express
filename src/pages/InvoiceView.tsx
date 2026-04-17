@@ -44,7 +44,7 @@ export default function InvoiceView() {
         </button>
       </div>
 
-      <div ref={printRef} className="bg-white text-zinc-950 shadow-2xl rounded-3xl p-10 print:shadow-none print:p-0 print:rounded-none">
+      <div id="printable-invoice" ref={printRef} className="bg-white text-zinc-950 shadow-2xl rounded-3xl p-10 print:shadow-none print:p-0 print:rounded-none">
         {/* Header */}
         <div className="border-b-4 border-zinc-950 pb-8 mb-8 flex justify-between items-start relative">
           {invoice.status === 'cancelled' && (
@@ -219,24 +219,22 @@ export default function InvoiceView() {
           body * {
             visibility: hidden;
           }
-          .print\\:hidden {
-            display: none !important;
-          }
-          .print\\:shadow-none {
-            box-shadow: none !important;
-          }
-          .print\\:p-0 {
-            padding: 0 !important;
-          }
-          div[ref] {
+          #printable-invoice, #printable-invoice * {
             visibility: visible;
+          }
+          #printable-invoice {
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+            padding: 0;
+            margin: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-          div[ref] * {
-            visibility: visible;
+          @page {
+            size: auto;
+            margin: 12mm;
           }
         }
       `}</style>
