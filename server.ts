@@ -577,19 +577,20 @@ app.get('/api/settings', (req, res) => {
   });
 
 app.put('/api/settings', (req, res) => {
-    const { store_name, address, phone, gstin, state_code, logo_url } = req.body;
+    const { store_name, address, phone, gstin, state_code, logo_url, low_stock_threshold } = req.body;
     if (typeof store_name !== 'string' || typeof address !== 'string' || typeof phone !== 'string' ||
         typeof gstin !== 'string' || typeof state_code !== 'string' ||
         (logo_url !== undefined && logo_url !== null && typeof logo_url !== 'string') ||
-        (typeof logo_url === 'string' && logo_url !== '' && !/^https?:\/\//i.test(logo_url) && !logo_url.startsWith('/'))) {
+        (typeof logo_url === 'string' && logo_url !== '' && !/^https?:\/\//i.test(logo_url) && !logo_url.startsWith('/')) ||
+        (low_stock_threshold !== undefined && typeof low_stock_threshold !== 'number')) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
     try {
       db.prepare(`
         UPDATE settings 
-        SET store_name = ?, address = ?, phone = ?, gstin = ?, state_code = ?, logo_url = ?
+        SET store_name = ?, address = ?, phone = ?, gstin = ?, state_code = ?, logo_url = ?, low_stock_threshold = COALESCE(?, low_stock_threshold)
         WHERE id = 1
-      `).run(store_name, address, phone, gstin, state_code, logo_url);
+      `).run(store_name, address, phone, gstin, state_code, logo_url, low_stock_threshold);
       res.json({ success: true });
     } catch (err) {
       logger.error({ err }, 'Operation failed');
@@ -619,7 +620,7 @@ app.get('/api/dashboard/analytics', (req, res) => {
         ORDER BY substr(date, 1, 10) ASC
       `).all();
 
-      // Top 5 products
+      // Low 5 products
       // ⚡ Bolt: Replaced JOIN with EXISTS subquery to avoid large intermediate result sets and speed up aggregation
       const topProducts = db.prepare(`
         SELECT product_name as name, SUM(quantity) as qty, SUM(total) as revenue
@@ -632,14 +633,18 @@ app.get('/api/dashboard/analytics', (req, res) => {
         LIMIT 5
       `).all();
 
+      // Get low stock threshold from settings
+      const settings = db.prepare('SELECT low_stock_threshold FROM settings LIMIT 1').get() as { low_stock_threshold: number };
+      const threshold = settings?.low_stock_threshold ?? 10;
+
       // Low stock alerts
       const lowStock = db.prepare(`
         SELECT id, name, code, stock, unit
         FROM products
-        WHERE stock <= 10
+        WHERE stock <= ?
         ORDER BY stock ASC
         LIMIT 5
-      `).all();
+      `).all(threshold);
 
       res.json({ ...stats, last7Days, topProducts, lowStock });
     } catch (err: any) {

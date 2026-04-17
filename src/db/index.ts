@@ -128,20 +128,24 @@ db.exec(`
     phone TEXT NOT NULL,
     gstin TEXT NOT NULL,
     state_code TEXT NOT NULL,
-    logo_url TEXT
+    logo_url TEXT,
+    low_stock_threshold INTEGER DEFAULT 10
   );
 `);
 
 const settingsCount = db.prepare('SELECT count(*) as c FROM settings').get() as { c: number };
 if (settingsCount.c === 0) {
-  db.prepare('INSERT INTO settings (store_name, address, phone, gstin, state_code) VALUES (?, ?, ?, ?, ?)').run(
+  db.prepare('INSERT INTO settings (store_name, address, phone, gstin, state_code, low_stock_threshold) VALUES (?, ?, ?, ?, ?, ?)').run(
     'Bill Express',
     '123 Market Road, District, West Bengal - 700001',
     '9876543210',
     '19AAAAA0000A1Z5',
-    '19 (West Bengal)'
+    '19 (West Bengal)',
+    10
   );
 }
+
+try { db.exec("ALTER TABLE settings ADD COLUMN low_stock_threshold INTEGER DEFAULT 10"); } catch (e) {}
 
 // Seed some default products if empty
 const sampleProducts = [
