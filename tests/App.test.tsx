@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import App from './App';
+import App from '../src/App';
 
-vi.mock('./components/Layout', () => ({
+vi.mock('../src/components/Layout', () => ({
   default: ({ onLogout }: { onLogout: () => void }) => {
     const { Outlet } = require('react-router-dom');
     return (
@@ -15,14 +15,14 @@ vi.mock('./components/Layout', () => ({
   }
 }));
 
-vi.mock('./pages/Dashboard', () => ({ default: () => <div data-testid="dashboard-page" /> }));
-vi.mock('./pages/NewBill', () => ({ default: () => <div data-testid="new-bill-page" /> }));
-vi.mock('./pages/Products', () => ({ default: () => <div data-testid="products-page" /> }));
-vi.mock('./pages/Customers', () => ({ default: () => <div data-testid="customers-page" /> }));
-vi.mock('./pages/Invoices', () => ({ default: () => <div data-testid="invoices-page" /> }));
-vi.mock('./pages/InvoiceView', () => ({ default: () => <div data-testid="invoice-view-page" /> }));
-vi.mock('./pages/Settings', () => ({ default: () => <div data-testid="settings-page" /> }));
-vi.mock('./pages/Login', () => ({
+vi.mock('../src/pages/Dashboard', () => ({ default: () => <div data-testid="dashboard-page" /> }));
+vi.mock('../src/pages/NewBill', () => ({ default: () => <div data-testid="new-bill-page" /> }));
+vi.mock('../src/pages/Products', () => ({ default: () => <div data-testid="products-page" /> }));
+vi.mock('../src/pages/Customers', () => ({ default: () => <div data-testid="customers-page" /> }));
+vi.mock('../src/pages/Invoices', () => ({ default: () => <div data-testid="invoices-page" /> }));
+vi.mock('../src/pages/InvoiceView', () => ({ default: () => <div data-testid="invoice-view-page" /> }));
+vi.mock('../src/pages/Settings', () => ({ default: () => <div data-testid="settings-page" /> }));
+vi.mock('../src/pages/Login', () => ({
   default: ({ onLogin }: { onLogin: () => void }) => (
     <div data-testid="login-page">
       <button onClick={onLogin}>Mock Login Button</button>

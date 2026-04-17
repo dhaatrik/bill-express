@@ -12,7 +12,7 @@ describe('logger', () => {
       default: pinoMock,
     }));
 
-    await import('../utils/logger.js');
+    await import('../../src/utils/logger.js');
 
     expect(pinoMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -28,7 +28,7 @@ describe('logger', () => {
       default: pinoMock,
     }));
 
-    await import('../utils/logger.js');
+    await import('../../src/utils/logger.js');
 
     expect(pinoMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -44,7 +44,7 @@ describe('logger', () => {
       default: pinoMock,
     }));
 
-    await import('../utils/logger.js');
+    await import('../../src/utils/logger.js');
 
     expect(pinoMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe('logger', () => {
       default: pinoMock,
     }));
 
-    await import('../utils/logger.js');
+    await import('../../src/utils/logger.js');
 
     expect(pinoMock).toHaveBeenCalledWith(
       expect.objectContaining({

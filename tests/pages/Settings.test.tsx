@@ -1,12 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Settings from './Settings';
-import { apiFetch } from '../utils/api.js';
-import { logger } from '../utils/logger.js';
+import Settings from '../../src/pages/Settings';
+import { apiFetch } from '../../src/utils/api.js';
 
 // Mock apiFetch
-vi.mock('../utils/api.js', () => ({
+vi.mock('../../src/utils/api.js', () => ({
   apiFetch: vi.fn()
 }));
 
@@ -20,17 +19,17 @@ const mockSettings = {
 };
 
 describe('Settings Component', () => {
-  let loggerErrorSpy: any;
+  let consoleErrorSpy: any;
   let alertSpy: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    loggerErrorSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
     alertSpy.mockRestore();
   });
 
@@ -179,7 +178,7 @@ describe('Settings Component', () => {
       }));
     });
 
-    expect(loggerErrorSpy).toHaveBeenCalledWith(testError);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(testError);
     expect(alertSpy).toHaveBeenCalledWith('Failed to save settings');
   });
 });

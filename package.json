@@ -1,7 +1,8 @@
 {
-  "name": "react-example",
+  "name": "bill-express",
+  "author": "Dhaatrik Chowdhury",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -10,7 +11,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

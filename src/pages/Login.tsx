@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -63,15 +64,25 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
 
           <div>
             <label htmlFor="password" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              disabled={isLoading}
-              onChange={(e) => setPassword(e.target.value)}
-              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="Enter password"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                disabled={isLoading}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed pr-12"
+                placeholder="Enter password"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-white transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button

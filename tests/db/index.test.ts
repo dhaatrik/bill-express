@@ -8,7 +8,7 @@ describe('Database Schema Initialization', () => {
     process.env.NODE_ENV = 'test';
 
     // Dynamically import db to ensure the env var is picked up
-    const module = await import('./index.js');
+    const module = await import('../../src/db/index.js');
     db = module.default;
   });
 

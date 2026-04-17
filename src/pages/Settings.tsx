@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Loader2 } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
-import { logger } from '../utils/logger.js';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -33,7 +32,7 @@ export default function Settings() {
       });
       alert('Settings saved successfully!');
     } catch (err) {
-      logger.error(err);
+      console.error(err);
       alert('Failed to save settings');
     } finally {
       setIsSaving(false);
@@ -54,7 +53,7 @@ export default function Settings() {
               type="text"
               value={settings.store_name}
               onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-              className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSaving}
               required
             />
@@ -66,7 +65,7 @@ export default function Settings() {
               value={settings.address}
               onChange={(e) => setSettings({ ...settings, address: e.target.value })}
               rows={3}
-              className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSaving}
               required
             />
@@ -79,7 +78,7 @@ export default function Settings() {
                 type="text"
                 value={settings.phone}
                 onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
-                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSaving}
                 required
               />
@@ -90,7 +89,7 @@ export default function Settings() {
                 type="text"
                 value={settings.gstin}
                 onChange={(e) => setSettings({ ...settings, gstin: e.target.value })}
-                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSaving}
                 required
               />
@@ -104,7 +103,7 @@ export default function Settings() {
                 type="text"
                 value={settings.state_code}
                 onChange={(e) => setSettings({ ...settings, state_code: e.target.value })}
-                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="e.g. 19 (West Bengal)"
                 disabled={isSaving}
                 required
@@ -116,7 +115,7 @@ export default function Settings() {
                 type="text"
                 value={settings.logo_url || ''}
                 onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
-                className="block w-full sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="https://..."
                 disabled={isSaving}
               />
