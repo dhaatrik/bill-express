@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Loader2, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, ArrowUpDown, Loader2, Package, History } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Product } from '../types.js';
+import InventoryAdjustmentModal from '../components/InventoryAdjustmentModal.js';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -10,7 +11,9 @@ export default function Products() {
   const limit = 50;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   
   // Search, Filter, Sort state
   const [searchQuery, setSearchQuery] = useState('');
@@ -142,6 +145,17 @@ export default function Products() {
           </span>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <button 
+            onClick={() => {
+              setAdjustingProduct(product);
+              setIsAdjustmentModalOpen(true);
+            }} 
+            className="text-amber-400 hover:text-amber-300 mr-4 transition-colors" 
+            aria-label={`Inventory History ${product.name}`} 
+            title="Stock adjustment & history"
+          >
+            <History className="h-5 w-5" />
+          </button>
           <button onClick={() => openEditModal(product)} className="text-cyan-400 hover:text-cyan-300 mr-4 transition-colors" aria-label={`Edit ${product.name}`} title="Edit product">
             <Edit className="h-5 w-5" />
           </button>
@@ -472,6 +486,18 @@ export default function Products() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Inventory Adjustment Modal */}
+      {isAdjustmentModalOpen && adjustingProduct && (
+        <InventoryAdjustmentModal
+          product={adjustingProduct}
+          onClose={() => {
+            setIsAdjustmentModalOpen(false);
+            setAdjustingProduct(null);
+          }}
+          onSuccess={fetchProducts}
+        />
       )}
     </div>
   );
