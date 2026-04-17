@@ -4,9 +4,9 @@
 - [x] Task: Create inventory_transactions database table [8a4c4dd]
     - [x] Write Tests: Unit tests for new DB schema and queries
     - [x] Implement Feature: Update SQLite schema and data access methods
-- [ ] Task: Implement REST API for stock transactions
-    - [ ] Write Tests: Integration tests for stock transaction endpoints
-    - [ ] Implement Feature: Create Express routes for getting and adding stock transactions
+- [x] Task: Implement REST API for stock transactions [69a2b85]
+    - [x] Write Tests: Integration tests for stock transaction endpoints
+    - [x] Implement Feature: Create Express routes for getting and adding stock transactions
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Database and Backend API' (Protocol in workflow.md)
 
 ## Phase 2: Frontend Dashboard and Product Management
