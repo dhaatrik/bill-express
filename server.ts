@@ -50,19 +50,19 @@ app.use((req, res, next) => {
 
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const expectedAuth = getExpectedAuth();
-    const authHeader = req.headers.authorization || '';
+    // Security Enhancement: Strictly coerce to string to prevent TypeError DoS
+    const rawAuthHeader = req.headers.authorization;
+    const authHeader = typeof rawAuthHeader === 'string' ? rawAuthHeader : '';
 
     let valid = false;
 
     if (expectedAuth) {
-      const expectedBuffer = Buffer.from(expectedAuth);
-      const providedBuffer = Buffer.from(authHeader);
+      // Security Enhancement: Hash both expected and provided to fixed length before timingSafeEqual
+      // This prevents timing attacks that leak credential length.
+      const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest();
+      const providedHash = crypto.createHash('sha256').update(authHeader).digest();
 
-      if (expectedBuffer.length === providedBuffer.length) {
-        valid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
-      } else {
-        crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
-      }
+      valid = crypto.timingSafeEqual(expectedHash, providedHash);
     }
 
     // Don't remove this. This credential is meant to test the webapp
