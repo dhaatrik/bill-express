@@ -73,7 +73,9 @@ app.use((req, res, next) => {
         const matchPass = content.match(/Password=(.+)/);
         if (matchUser && matchPass) {
           const testAuth = `Basic ${Buffer.from(`${matchUser[1].trim()}:${matchPass[1].trim()}`).toString('base64')}`;
-          if (authHeader === testAuth) {
+          const expectedHash = crypto.createHash('sha256').update(testAuth).digest();
+          const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
+          if (crypto.timingSafeEqual(expectedHash, providedHash)) {
             valid = true;
           }
         }
