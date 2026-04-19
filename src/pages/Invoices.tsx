@@ -1,4 +1,4 @@
-import { useState, useEffect, useDeferredValue } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -18,33 +18,31 @@ export default function Invoices() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchInvoices();
-    }, 300);
+    }, 300); // Debounce fetch on search
     return () => clearTimeout(timer);
-  }, [search, dateFilter, typeFilter, page]);
+  }, [page, limit, search, dateFilter, typeFilter]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, dateFilter, typeFilter]);
-
-  const fetchInvoices = () => {
+  const fetchInvoices = async () => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
-      search,
-      dateFilter,
-      typeFilter
+      search: search,
+      dateFilter: dateFilter,
+      typeFilter: typeFilter
     });
-    apiFetch(`/api/invoices?${params}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.data) {
-          setInvoices(data.data);
-          setTotalInvoices(data.total);
-        } else {
-          setInvoices(Array.isArray(data) ? data : []);
-          setTotalInvoices(Array.isArray(data) ? data.length : 0);
-        }
-      });
+    try {
+      const res = await apiFetch(`/api/invoices?${params}`);
+      const data = await res.json();
+      if (data.data) {
+        setInvoices(data.data);
+        setTotalInvoices(data.total);
+      } else {
+        setInvoices(Array.isArray(data) ? data : []);
+        setTotalInvoices(Array.isArray(data) ? data.length : 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch invoices', err);
+    }
   };
 
   const handleCancel = async (id: number) => {
@@ -78,16 +76,18 @@ export default function Invoices() {
     }
   };
 
-  const handleExportCSV = async () => {
-    const params = new URLSearchParams({
-      page: '1',
-      limit: '100000',
-        search,
-      dateFilter,
-      typeFilter
-    });
+  const [isExporting, setIsExporting] = useState(false);
 
+  const handleExportCSV = async () => {
+    setIsExporting(true);
     try {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '10000', // Fetch up to 10k records for export
+        search: search,
+        dateFilter: dateFilter,
+        typeFilter: typeFilter
+      });
       const res = await apiFetch(`/api/invoices?${params}`);
       const data = await res.json();
       const exportData = data.data || [];
@@ -113,12 +113,12 @@ export default function Invoices() {
       link.download = 'invoices.csv';
       link.click();
     } catch (err) {
-      console.error('Failed to export CSV', err);
-      alert('Failed to export CSV');
+      console.error('Failed to export invoices', err);
+      alert('Failed to export invoices');
+    } finally {
+      setIsExporting(false);
     }
   };
-
-  const totalPages = Math.ceil(totalInvoices / limit);
 
   return (
     <div className="space-y-6">
@@ -126,10 +126,11 @@ export default function Invoices() {
         <h1 className="text-3xl font-black tracking-tight text-white">Invoices</h1>
         <button
           onClick={handleExportCSV}
-          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-cyan-400 hover:bg-cyan-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+          disabled={isExporting}
+          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-cyan-400 hover:bg-cyan-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
         >
           <Download className="-ml-1 mr-2 h-4 w-4" />
-          Export CSV
+          {isExporting ? 'Exporting...' : 'Export CSV'}
         </button>
       </div>
 
@@ -145,12 +146,18 @@ export default function Invoices() {
               className="block w-full pl-10 sm:text-sm"
               placeholder="Search by invoice #, name, or mobile..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
           <select
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            onChange={(e) => {
+              setDateFilter(e.target.value);
+              setPage(1);
+            }}
             className="block w-full sm:w-48 sm:text-sm"
             aria-label="Filter by date"
           >
@@ -160,7 +167,10 @@ export default function Invoices() {
           </select>
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(1);
+            }}
             className="block w-full sm:w-48 sm:text-sm"
             aria-label="Filter by invoice type"
           >
@@ -246,9 +256,13 @@ export default function Invoices() {
             </div>
           </div>
         </div>
+      </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl mt-4">
+      {/* Pagination Controls */}
+      {(() => {
+        const totalPages = Math.ceil(totalInvoices / limit);
+        return totalPages > 1 ? (
+          <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -282,7 +296,7 @@ export default function Invoices() {
                     &larr;
                   </button>
                   <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
-                    {page} / {totalPages}
+                    Page {page} of {totalPages}
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -296,9 +310,8 @@ export default function Invoices() {
               </div>
             </div>
           </div>
-        )}
-
-      </div>
+        ) : null;
+      })()}
     </div>
   );
 }

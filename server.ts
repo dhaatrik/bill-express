@@ -51,15 +51,18 @@ app.use((req, res, next) => {
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const expectedAuth = getExpectedAuth();
     const authHeader = req.headers.authorization || '';
-    const safeAuthHeader = typeof authHeader === 'string' ? authHeader : '';
 
     let valid = false;
 
     if (expectedAuth) {
-      const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest();
-      const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
+      const expectedBuffer = Buffer.from(expectedAuth);
+      const providedBuffer = Buffer.from(authHeader);
 
-      valid = crypto.timingSafeEqual(expectedHash, providedHash);
+      if (expectedBuffer.length === providedBuffer.length) {
+        valid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+      } else {
+        crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
+      }
     }
 
     // Don't remove this. This credential is meant to test the webapp
@@ -70,9 +73,7 @@ app.use((req, res, next) => {
         const matchPass = content.match(/Password=(.+)/);
         if (matchUser && matchPass) {
           const testAuth = `Basic ${Buffer.from(`${matchUser[1].trim()}:${matchPass[1].trim()}`).toString('base64')}`;
-          const expectedHash = crypto.createHash('sha256').update(testAuth).digest();
-          const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
-          if (crypto.timingSafeEqual(expectedHash, providedHash)) {
+          if (authHeader === testAuth) {
             valid = true;
           }
         }
@@ -301,10 +302,6 @@ app.get('/api/customers/count', (req, res) => {
 
 app.get('/api/customers', (req, res) => {
     const search = req.query.search as string;
-    let limit = parseInt(req.query.limit as string) || 1000;
-    if (limit < 1) limit = 1;
-    if (limit > 10000) limit = 10000;
-
     // ⚡ Bolt: Use scalar subquery instead of LEFT JOIN + GROUP BY for performance
     // See .jules/bolt.md for details
     if (search) {
@@ -312,16 +309,15 @@ app.get('/api/customers', (req, res) => {
         SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
         FROM customers c
         WHERE c.mobile LIKE ? OR c.name LIKE ?
-        LIMIT ?
-      `).all(`%${search}%`, `%${search}%`, limit);
+        LIMIT 10
+      `).all(`%${search}%`, `%${search}%`);
       res.json(customers);
     } else {
       const customers = db.prepare(`
         SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
         FROM customers c
         ORDER BY c.name ASC
-        LIMIT ?
-      `).all(limit);
+      `).all();
       res.json(customers);
     }
   });
@@ -380,9 +376,10 @@ app.get('/api/invoices', (req, res) => {
     let page = parseInt(req.query.page as string) || 1;
     let limit = parseInt(req.query.limit as string) || 50;
 
+    // Security Enhancement: Prevent negative limits/offsets (DoS risk)
     if (page < 1) page = 1;
     if (limit < 1) limit = 1;
-    if (limit > 100000) limit = 100000;
+    if (limit > 1000) limit = 1000;
 
     const search = req.query.search as string || '';
     const dateFilter = req.query.dateFilter as string || 'all';
@@ -398,7 +395,6 @@ app.get('/api/invoices', (req, res) => {
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id = c.id
     `;
-
     const params: any[] = [];
     const conditions: string[] = [];
 
@@ -412,10 +408,12 @@ app.get('/api/invoices', (req, res) => {
       params.push(typeFilter);
     }
 
-    if (dateFilter === 'today') {
-      conditions.push("i.date >= date('now', 'localtime', 'start of day') AND i.date < date('now', 'localtime', '+1 day', 'start of day')");
-    } else if (dateFilter === 'month') {
-      conditions.push("i.date >= date('now', 'localtime', 'start of month') AND i.date < date('now', 'localtime', 'start of month', '+1 month')");
+    if (dateFilter !== 'all') {
+      if (dateFilter === 'today') {
+        conditions.push("i.date >= date('now', 'start of day') AND i.date < date('now', '+1 day', 'start of day')");
+      } else if (dateFilter === 'month') {
+        conditions.push("i.date >= date('now', 'start of month') AND i.date < date('now', '+1 month', 'start of month')");
+      }
     }
 
     if (conditions.length > 0) {

@@ -1,6 +1,3 @@
-## 2026-04-19 - Missing Pagination on Large Dataset endpoint
-**Learning:** The /api/invoices endpoint queries all records without pagination, causing massive memory overhead and slow response times for large datasets.
-**Action:** Apply pagination (LIMIT and OFFSET) to large data endpoints like /api/invoices.
-## 2026-04-19 - React State Pagination Traps
-**Learning:** When transitioning from client-side filtering to server-side pagination with dynamic filters, failing to reset the current `page` state to `1` when filters change will trap users on empty pages (e.g., being on page 3 when a new search yields only 5 total results).
-**Action:** Always include a `useEffect` to reset the pagination state (`setPage(1)`) dependent on the filter state values when implementing server-side filtering.
+## 2026-04-19 - Refactor /api/invoices to use pagination
+**Learning:** Returning large, unpaginated datasets (like all invoices via `/api/invoices`) with `SELECT * FROM invoices LEFT JOIN ...` is both a severe DoS vulnerability and a significant frontend performance bottleneck.
+**Action:** Always implement pagination on list endpoints by enforcing hard limits (`limit = Math.min(1000, req.query.limit)`) on the server. When migrating a client-side filtered table to a server-side paginated table, remember to refactor the "Export to CSV" function so it explicitly queries the server for the full dataset (using a large `limit` parameter and matching filter parameters) instead of relying on the local state, which now only contains a single page of data.
