@@ -373,13 +373,65 @@ app.put('/api/customers/:id', (req, res) => {
 
   // Invoices
 app.get('/api/invoices', (req, res) => {
-    const invoices = db.prepare(`
+    let page = parseInt(req.query.page as string) || 1;
+    let limit = parseInt(req.query.limit as string) || 50;
+
+    // Security Enhancement: Prevent negative limits/offsets (DoS risk)
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 1;
+    if (limit > 1000) limit = 1000;
+
+    const search = req.query.search as string || '';
+    const dateFilter = req.query.dateFilter as string || 'all';
+    const typeFilter = req.query.typeFilter as string || 'all';
+
+    let query = `
       SELECT i.*, c.name as customer_name, c.mobile as customer_mobile
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id = c.id
-      ORDER BY i.date DESC, i.id DESC
-    `).all();
-    res.json(invoices);
+    `;
+    let countQuery = `
+      SELECT COUNT(*) as count
+      FROM invoices i
+      LEFT JOIN customers c ON i.customer_id = c.id
+    `;
+    const params: any[] = [];
+    const conditions: string[] = [];
+
+    if (search) {
+      conditions.push('(i.invoice_number LIKE ? OR c.name LIKE ? OR c.mobile LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (typeFilter !== 'all') {
+      conditions.push('i.type = ?');
+      params.push(typeFilter);
+    }
+
+    if (dateFilter !== 'all') {
+      if (dateFilter === 'today') {
+        conditions.push("i.date >= date('now', 'start of day') AND i.date < date('now', '+1 day', 'start of day')");
+      } else if (dateFilter === 'month') {
+        conditions.push("i.date >= date('now', 'start of month') AND i.date < date('now', '+1 month', 'start of month')");
+      }
+    }
+
+    if (conditions.length > 0) {
+      const whereClause = ' WHERE ' + conditions.join(' AND ');
+      query += whereClause;
+      countQuery += whereClause;
+    }
+
+    query += ' ORDER BY i.date DESC, i.id DESC LIMIT ? OFFSET ?';
+
+    try {
+      const totalResult = db.prepare(countQuery).get(...params) as { count: number };
+      const invoices = db.prepare(query).all(...params, limit, (page - 1) * limit);
+      res.json({ data: invoices, total: totalResult.count });
+    } catch (err: any) {
+      logger.error({ err }, 'Operation failed');
+      res.status(500).json({ error: 'An error occurred while processing the request' });
+    }
   });
 
 app.get('/api/invoices/:id', (req, res) => {

@@ -1,0 +1,3 @@
+## 2024-04-19 - Refactor /api/invoices to use pagination
+**Learning:** Returning large, unpaginated datasets (like all invoices via `/api/invoices`) with `SELECT * FROM invoices LEFT JOIN ...` is both a severe DoS vulnerability and a significant frontend performance bottleneck.
+**Action:** Always implement pagination on list endpoints by enforcing hard limits (`limit = Math.min(1000, req.query.limit)`) on the server. When migrating a client-side filtered table to a server-side paginated table, remember to refactor the "Export to CSV" function so it explicitly queries the server for the full dataset (using a large `limit` parameter and matching filter parameters) instead of relying on the local state, which now only contains a single page of data.

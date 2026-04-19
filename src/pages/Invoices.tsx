@@ -1,4 +1,4 @@
-import { useState, useEffect, useDeferredValue, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -7,18 +7,42 @@ import { Invoice } from '../types.js';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
   useEffect(() => {
-    fetchInvoices();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchInvoices();
+    }, 300); // Debounce fetch on search
+    return () => clearTimeout(timer);
+  }, [page, limit, search, dateFilter, typeFilter]);
 
-  const fetchInvoices = () => {
-    apiFetch('/api/invoices')
-      .then(res => res.json())
-      .then(data => setInvoices(data));
+  const fetchInvoices = async () => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      search: search,
+      dateFilter: dateFilter,
+      typeFilter: typeFilter
+    });
+    try {
+      const res = await apiFetch(`/api/invoices?${params}`);
+      const data = await res.json();
+      if (data.data) {
+        setInvoices(data.data);
+        setTotalInvoices(data.total);
+      } else {
+        setInvoices(Array.isArray(data) ? data : []);
+        setTotalInvoices(Array.isArray(data) ? data.length : 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch invoices', err);
+    }
   };
 
   const handleCancel = async (id: number) => {
@@ -52,63 +76,49 @@ export default function Invoices() {
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Invoice No', 'Date', 'Customer', 'Type', 'Status', 'Payment Status', 'Amount Paid', 'Total Amount'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredInvoices.map((i: Invoice) => [
-        `"${i.invoice_number}"`,
-        `"${format(new Date(i.date), 'yyyy-MM-dd')}"`,
-        `"${i.customer_name || 'Cash Sale'}"`,
-        `"${i.type}"`,
-        `"${i.status}"`,
-        `"${i.payment_status}"`,
-        i.amount_paid,
-        i.grand_total
-      ].join(','))
-    ].join('\n');
+  const [isExporting, setIsExporting] = useState(false);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'invoices.csv';
-    link.click();
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '10000', // Fetch up to 10k records for export
+        search: search,
+        dateFilter: dateFilter,
+        typeFilter: typeFilter
+      });
+      const res = await apiFetch(`/api/invoices?${params}`);
+      const data = await res.json();
+      const exportData = data.data || [];
+
+      const headers = ['Invoice No', 'Date', 'Customer', 'Type', 'Status', 'Payment Status', 'Amount Paid', 'Total Amount'];
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map((i: Invoice) => [
+          `"${i.invoice_number}"`,
+          `"${format(new Date(i.date), 'yyyy-MM-dd')}"`,
+          `"${i.customer_name || 'Cash Sale'}"`,
+          `"${i.type}"`,
+          `"${i.status}"`,
+          `"${i.payment_status}"`,
+          i.amount_paid,
+          i.grand_total
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'invoices.csv';
+      link.click();
+    } catch (err) {
+      console.error('Failed to export invoices', err);
+      alert('Failed to export invoices');
+    } finally {
+      setIsExporting(false);
+    }
   };
-
-  // ⚡ Bolt: Decouple input state from filtering logic using useDeferredValue
-  const deferredSearch = useDeferredValue(search);
-
-  const filteredInvoices = useMemo(() => {
-    // ⚡ Bolt: Extract invariants (date instances, strings) from O(N) filter loop
-    const searchLower = deferredSearch.toLowerCase();
-    const now = new Date();
-    const todayString = now.toDateString();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    return invoices.filter((inv: Invoice) => {
-      const matchesSearch = inv.invoice_number.toLowerCase().includes(searchLower) ||
-        (inv.customer_name && inv.customer_name.toLowerCase().includes(searchLower)) ||
-        (inv.customer_mobile && inv.customer_mobile.includes(deferredSearch));
-
-      // ⚡ Bolt: Early return for expensive date parsing
-      if (!matchesSearch) return false;
-
-      const matchesType = typeFilter === 'all' || inv.type === typeFilter;
-      if (!matchesType) return false;
-
-      if (dateFilter !== 'all') {
-        const invDate = new Date(inv.date);
-        if (dateFilter === 'today') {
-          return invDate.toDateString() === todayString;
-        } else if (dateFilter === 'month') {
-          return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
-        }
-      }
-
-      return true;
-    });
-  }, [invoices, deferredSearch, typeFilter, dateFilter]);
 
   return (
     <div className="space-y-6">
@@ -116,10 +126,11 @@ export default function Invoices() {
         <h1 className="text-3xl font-black tracking-tight text-white">Invoices</h1>
         <button
           onClick={handleExportCSV}
-          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-cyan-400 hover:bg-cyan-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+          disabled={isExporting}
+          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-cyan-400 hover:bg-cyan-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
         >
           <Download className="-ml-1 mr-2 h-4 w-4" />
-          Export CSV
+          {isExporting ? 'Exporting...' : 'Export CSV'}
         </button>
       </div>
 
@@ -135,12 +146,18 @@ export default function Invoices() {
               className="block w-full pl-10 sm:text-sm"
               placeholder="Search by invoice #, name, or mobile..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
           <select
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            onChange={(e) => {
+              setDateFilter(e.target.value);
+              setPage(1);
+            }}
             className="block w-full sm:w-48 sm:text-sm"
             aria-label="Filter by date"
           >
@@ -150,7 +167,10 @@ export default function Invoices() {
           </select>
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(1);
+            }}
             className="block w-full sm:w-48 sm:text-sm"
             aria-label="Filter by invoice type"
           >
@@ -178,7 +198,7 @@ export default function Invoices() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {filteredInvoices.map((invoice: Invoice) => (
+                    {invoices.map((invoice: Invoice) => (
                       <tr key={invoice.id} className="hover:bg-zinc-800/50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{invoice.invoice_number}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
@@ -237,6 +257,58 @@ export default function Invoices() {
           </div>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {Math.ceil(totalInvoices / limit) > 1 && (
+        <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(Math.ceil(totalInvoices / limit), p + 1))}
+              disabled={page === Math.ceil(totalInvoices / limit)}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">
+                Showing <span className="font-medium text-white">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-white">{Math.min(page * limit, totalInvoices)}</span> of <span className="font-medium text-white">{totalInvoices}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  <span className="sr-only">Previous</span>
+                  &larr;
+                </button>
+                <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
+                  Page {page} of {Math.ceil(totalInvoices / limit)}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(Math.ceil(totalInvoices / limit), p + 1))}
+                  disabled={page === Math.ceil(totalInvoices / limit)}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  <span className="sr-only">Next</span>
+                  &rarr;
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
