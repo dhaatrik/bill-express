@@ -1,4 +1,4 @@
-import { useState, useEffect, useDeferredValue, useMemo } from 'react';
+import { useState, useEffect, useDeferredValue } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -7,18 +7,44 @@ import { Invoice } from '../types.js';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
   useEffect(() => {
-    fetchInvoices();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchInvoices();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, dateFilter, typeFilter, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, dateFilter, typeFilter]);
 
   const fetchInvoices = () => {
-    apiFetch('/api/invoices')
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      search,
+      dateFilter,
+      typeFilter
+    });
+    apiFetch(`/api/invoices?${params}`)
       .then(res => res.json())
-      .then(data => setInvoices(data));
+      .then(data => {
+        if (data.data) {
+          setInvoices(data.data);
+          setTotalInvoices(data.total);
+        } else {
+          setInvoices(Array.isArray(data) ? data : []);
+          setTotalInvoices(Array.isArray(data) ? data.length : 0);
+        }
+      });
   };
 
   const handleCancel = async (id: number) => {
@@ -52,63 +78,47 @@ export default function Invoices() {
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Invoice No', 'Date', 'Customer', 'Type', 'Status', 'Payment Status', 'Amount Paid', 'Total Amount'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredInvoices.map((i: Invoice) => [
-        `"${i.invoice_number}"`,
-        `"${format(new Date(i.date), 'yyyy-MM-dd')}"`,
-        `"${i.customer_name || 'Cash Sale'}"`,
-        `"${i.type}"`,
-        `"${i.status}"`,
-        `"${i.payment_status}"`,
-        i.amount_paid,
-        i.grand_total
-      ].join(','))
-    ].join('\n');
+  const handleExportCSV = async () => {
+    const params = new URLSearchParams({
+      page: '1',
+      limit: '100000',
+        search,
+      dateFilter,
+      typeFilter
+    });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'invoices.csv';
-    link.click();
+    try {
+      const res = await apiFetch(`/api/invoices?${params}`);
+      const data = await res.json();
+      const exportData = data.data || [];
+
+      const headers = ['Invoice No', 'Date', 'Customer', 'Type', 'Status', 'Payment Status', 'Amount Paid', 'Total Amount'];
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map((i: Invoice) => [
+          `"${i.invoice_number}"`,
+          `"${format(new Date(i.date), 'yyyy-MM-dd')}"`,
+          `"${i.customer_name || 'Cash Sale'}"`,
+          `"${i.type}"`,
+          `"${i.status}"`,
+          `"${i.payment_status}"`,
+          i.amount_paid,
+          i.grand_total
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'invoices.csv';
+      link.click();
+    } catch (err) {
+      console.error('Failed to export CSV', err);
+      alert('Failed to export CSV');
+    }
   };
 
-  // ⚡ Bolt: Decouple input state from filtering logic using useDeferredValue
-  const deferredSearch = useDeferredValue(search);
-
-  const filteredInvoices = useMemo(() => {
-    // ⚡ Bolt: Extract invariants (date instances, strings) from O(N) filter loop
-    const searchLower = deferredSearch.toLowerCase();
-    const now = new Date();
-    const todayString = now.toDateString();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    return invoices.filter((inv: Invoice) => {
-      const matchesSearch = inv.invoice_number.toLowerCase().includes(searchLower) ||
-        (inv.customer_name && inv.customer_name.toLowerCase().includes(searchLower)) ||
-        (inv.customer_mobile && inv.customer_mobile.includes(deferredSearch));
-
-      // ⚡ Bolt: Early return for expensive date parsing
-      if (!matchesSearch) return false;
-
-      const matchesType = typeFilter === 'all' || inv.type === typeFilter;
-      if (!matchesType) return false;
-
-      if (dateFilter !== 'all') {
-        const invDate = new Date(inv.date);
-        if (dateFilter === 'today') {
-          return invDate.toDateString() === todayString;
-        } else if (dateFilter === 'month') {
-          return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
-        }
-      }
-
-      return true;
-    });
-  }, [invoices, deferredSearch, typeFilter, dateFilter]);
+  const totalPages = Math.ceil(totalInvoices / limit);
 
   return (
     <div className="space-y-6">
@@ -178,7 +188,7 @@ export default function Invoices() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {filteredInvoices.map((invoice: Invoice) => (
+                    {invoices.map((invoice: Invoice) => (
                       <tr key={invoice.id} className="hover:bg-zinc-800/50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{invoice.invoice_number}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
@@ -236,6 +246,58 @@ export default function Invoices() {
             </div>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl mt-4">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">
+                  Showing <span className="font-medium text-white">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-white">{Math.min(page * limit, totalInvoices)}</span> of <span className="font-medium text-white">{totalInvoices}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Previous</span>
+                    &larr;
+                  </button>
+                  <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Next</span>
+                    &rarr;
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
