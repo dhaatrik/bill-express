@@ -1,4 +1,4 @@
-## 2024-05-24 - [Fix Authentication Timing Attack and DoS Vulnerability]
+## 2026-04-19 - [Fix Authentication Timing Attack and DoS Vulnerability]
 **Vulnerability:** The `requireAuth` middleware suffered from a timing attack since it compared unhashed credentials with `crypto.timingSafeEqual`, which revealed the length of the expected credential if it didn't match. Additionally, there was a DoS vulnerability because it did not strictly coerce `req.headers.authorization` to a string, causing unhandled `TypeError` exceptions if an array was provided.
 **Learning:** These vulnerabilities exist because length-dependent timing differences are present in length-checking operations. Also, Express parses HTTP headers as strings or arrays of strings, causing a failure in strictly typed string logic when an array is passed.
 **Prevention:** Always coerce header variables to strings when performing cryptographic functions (`typeof authHeader === 'string' ? authHeader : ''`). Furthermore, to prevent timing attacks that leak credential lengths, hash both expected and provided credentials to a fixed length (e.g., using `crypto.createHash('sha256')`) before comparison.
