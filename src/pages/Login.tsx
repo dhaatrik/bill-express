@@ -79,6 +79,8 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-white transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
