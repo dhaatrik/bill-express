@@ -51,18 +51,15 @@ app.use((req, res, next) => {
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const expectedAuth = getExpectedAuth();
     const authHeader = req.headers.authorization || '';
+    const safeAuthHeader = typeof authHeader === 'string' ? authHeader : '';
 
     let valid = false;
 
     if (expectedAuth) {
-      const expectedBuffer = Buffer.from(expectedAuth);
-      const providedBuffer = Buffer.from(authHeader);
+      const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest();
+      const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
 
-      if (expectedBuffer.length === providedBuffer.length) {
-        valid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
-      } else {
-        crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
-      }
+      valid = crypto.timingSafeEqual(expectedHash, providedHash);
     }
 
     // Don't remove this. This credential is meant to test the webapp
@@ -73,7 +70,9 @@ app.use((req, res, next) => {
         const matchPass = content.match(/Password=(.+)/);
         if (matchUser && matchPass) {
           const testAuth = `Basic ${Buffer.from(`${matchUser[1].trim()}:${matchPass[1].trim()}`).toString('base64')}`;
-          if (authHeader === testAuth) {
+          const expectedHash = crypto.createHash('sha256').update(testAuth).digest();
+          const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
+          if (crypto.timingSafeEqual(expectedHash, providedHash)) {
             valid = true;
           }
         }
@@ -302,6 +301,10 @@ app.get('/api/customers/count', (req, res) => {
 
 app.get('/api/customers', (req, res) => {
     const search = req.query.search as string;
+    let limit = parseInt(req.query.limit as string) || 1000;
+    if (limit < 1) limit = 1;
+    if (limit > 10000) limit = 10000;
+
     // ⚡ Bolt: Use scalar subquery instead of LEFT JOIN + GROUP BY for performance
     // See .jules/bolt.md for details
     if (search) {
@@ -309,15 +312,16 @@ app.get('/api/customers', (req, res) => {
         SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
         FROM customers c
         WHERE c.mobile LIKE ? OR c.name LIKE ?
-        LIMIT 10
-      `).all(`%${search}%`, `%${search}%`);
+        LIMIT ?
+      `).all(`%${search}%`, `%${search}%`, limit);
       res.json(customers);
     } else {
       const customers = db.prepare(`
         SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
         FROM customers c
         ORDER BY c.name ASC
-      `).all();
+        LIMIT ?
+      `).all(limit);
       res.json(customers);
     }
   });
