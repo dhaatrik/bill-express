@@ -51,18 +51,15 @@ app.use((req, res, next) => {
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const expectedAuth = getExpectedAuth();
     const authHeader = req.headers.authorization || '';
+    const safeAuthHeader = typeof authHeader === 'string' ? authHeader : '';
 
     let valid = false;
 
     if (expectedAuth) {
-      const expectedBuffer = Buffer.from(expectedAuth);
-      const providedBuffer = Buffer.from(authHeader);
+      const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest();
+      const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
 
-      if (expectedBuffer.length === providedBuffer.length) {
-        valid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
-      } else {
-        crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
-      }
+      valid = crypto.timingSafeEqual(expectedHash, providedHash);
     }
 
     // Don't remove this. This credential is meant to test the webapp
@@ -73,7 +70,9 @@ app.use((req, res, next) => {
         const matchPass = content.match(/Password=(.+)/);
         if (matchUser && matchPass) {
           const testAuth = `Basic ${Buffer.from(`${matchUser[1].trim()}:${matchPass[1].trim()}`).toString('base64')}`;
-          if (authHeader === testAuth) {
+          const expectedHash = crypto.createHash('sha256').update(testAuth).digest();
+          const providedHash = crypto.createHash('sha256').update(safeAuthHeader).digest();
+          if (crypto.timingSafeEqual(expectedHash, providedHash)) {
             valid = true;
           }
         }
