@@ -95,7 +95,7 @@ export default function InventoryAdjustmentModal({ product, onClose, onSuccess }
               <h3 className="text-xl font-black text-white">{product.name}</h3>
               <p className="text-sm text-zinc-400 font-mono">{product.code} • Current Stock: <span className="text-lime-400 font-bold">{product.stock} {product.unit}</span></p>
             </div>
-            <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors" aria-label="Close modal" title="Close modal">
+            <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
               <X className="h-6 w-6" />
             </button>
           </div>

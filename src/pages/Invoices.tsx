@@ -256,9 +256,13 @@ export default function Invoices() {
             </div>
           </div>
         </div>
+      </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl mt-4">
+      {/* Pagination Controls */}
+      {(() => {
+        const totalPages = Math.ceil(totalInvoices / limit);
+        return totalPages > 1 ? (
+          <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -292,7 +296,7 @@ export default function Invoices() {
                     &larr;
                   </button>
                   <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
-                    {page} / {totalPages}
+                    Page {page} of {totalPages}
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -306,61 +310,8 @@ export default function Invoices() {
               </div>
             </div>
           </div>
-        )}
-
-      </div>
-
-      {/* Pagination Controls */}
-      {Math.ceil(totalInvoices / limit) > 1 && (
-        <div className="flex items-center justify-between bg-zinc-900 border-2 border-zinc-800 px-4 py-3 sm:px-6 rounded-2xl">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(Math.ceil(totalInvoices / limit), p + 1))}
-              disabled={page === Math.ceil(totalInvoices / limit)}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-medium rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">
-                Showing <span className="font-medium text-white">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-white">{Math.min(page * limit, totalInvoices)}</span> of <span className="font-medium text-white">{totalInvoices}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
-                >
-                  <span className="sr-only">Previous</span>
-                  &larr;
-                </button>
-                <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
-                  Page {page} of {Math.ceil(totalInvoices / limit)}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(Math.ceil(totalInvoices / limit), p + 1))}
-                  disabled={page === Math.ceil(totalInvoices / limit)}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
-                >
-                  <span className="sr-only">Next</span>
-                  &rarr;
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
+        ) : null;
+      })()}
     </div>
   );
 }

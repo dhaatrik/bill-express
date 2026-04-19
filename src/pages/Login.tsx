@@ -56,7 +56,6 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
               type="text"
               value={username}
               disabled={isLoading}
-              autoFocus
               onChange={(e) => setUsername(e.target.value)}
               className="block w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-0 focus:border-lime-400 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Enter username"
@@ -80,8 +79,6 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-white transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
