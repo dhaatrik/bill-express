@@ -1,4 +1,4 @@
-## 2024-05-18 - Fix Authentication Timing and DoS Vulnerabilities
+## 2026-04-20 - Fix Authentication Timing and DoS Vulnerabilities
 **Vulnerability:** The application was vulnerable to timing attacks (using `crypto.timingSafeEqual` directly on variable-length headers without hashing) and a potential DoS vulnerability where passing an array to the `Authorization` header would cause an unhandled `TypeError` (since `Buffer.from` expects a string, Buffer, etc). Additionally, invalid logins blocked the event loop synchronously with `fs.readFileSync`.
 **Learning:** Security comparisons shouldn't be executed directly on user inputs because varying string lengths could cause timing attacks or logic errors. Also, synchronous file system calls inside unauthenticated endpoints can be exploited for DoS.
 **Prevention:** Always coerce headers explicitly using typeof checks (e.g., `typeof req.headers.authorization === 'string'`), hash inputs before timing-safe comparison if their lengths might differ or are variable, and use asynchronous functions (`fs.promises.readFile`) within middleware routes to prevent blocking the event loop.
