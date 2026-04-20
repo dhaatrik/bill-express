@@ -1,23 +1,46 @@
-import { useState, useEffect, useDeferredValue, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Edit2, Save, X, Download } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Customer } from '../types.js';
 
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<Customer>>({});
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = () => {
-    apiFetch('/api/customers')
-      .then(res => res.json())
-      .then(data => setCustomers(data));
+  const fetchCustomers = async () => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      search: search
+    });
+    try {
+      const res = await apiFetch(`/api/customers?${params}`);
+      const data = await res.json();
+      if (data.data) {
+        setCustomers(data.data);
+        setTotalCustomers(data.total);
+      } else {
+        setCustomers(Array.isArray(data) ? data : []);
+        setTotalCustomers(Array.isArray(data) ? data.length : 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch customers', err);
+    }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCustomers();
+    }, 300); // Debounce fetch on search
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, search]);
 
   const handleEdit = (customer: Customer) => {
     setEditingId(customer.id);
@@ -39,38 +62,47 @@ export default function Customers() {
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Name', 'Mobile', 'Address', 'GSTIN', 'State', 'Lifetime Value'];
-    const csvContent = [
-      headers.join(','),
-      ...customers.map(c => [
-        `"${c.name}"`,
-        `"${c.mobile || ''}"`,
-        `"${c.address || ''}"`,
-        `"${c.gstin || ''}"`,
-        `"${c.state || ''}"`,
-        c.lifetime_value
-      ].join(','))
-    ].join('\n');
+  const [isExporting, setIsExporting] = useState(false);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'customers.csv';
-    link.click();
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '10000', // Fetch up to 10k records for export
+        search: search
+      });
+      const res = await apiFetch(`/api/customers?${params}`);
+      const data = await res.json();
+      const exportData = data.data || [];
+
+      const headers = ['Name', 'Mobile', 'Address', 'GSTIN', 'State', 'Lifetime Value'];
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map((c: Customer) => [
+          `"${c.name}"`,
+          `"${c.mobile || ''}"`,
+          `"${c.address || ''}"`,
+          `"${c.gstin || ''}"`,
+          `"${c.state || ''}"`,
+          c.lifetime_value
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'customers.csv';
+      link.click();
+    } catch (err) {
+      console.error('Failed to export customers', err);
+      alert('Failed to export customers');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  // ⚡ Bolt: Decouple input state from filtering logic using useDeferredValue
-  const deferredSearch = useDeferredValue(search);
-
-  const filteredCustomers = useMemo(() => {
-    // ⚡ Bolt: Cache lowercased search term to avoid redundant string allocations inside the O(N) filter loop
-    const searchLower = deferredSearch.toLowerCase();
-    return customers.filter(c =>
-      c.name.toLowerCase().includes(searchLower) ||
-      (c.mobile && c.mobile.includes(deferredSearch))
-    );
-  }, [customers, deferredSearch]);
+  const totalPages = Math.ceil(totalCustomers / limit);
 
   return (
     <div className="space-y-6">
@@ -78,10 +110,11 @@ export default function Customers() {
         <h1 className="text-3xl font-black tracking-tight text-white">Customers</h1>
         <button
           onClick={handleExportCSV}
-          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-cyan-400 hover:bg-cyan-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+          disabled={isExporting}
+          className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-cyan-400 hover:bg-cyan-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
         >
           <Download className="-ml-1 mr-2 h-4 w-4" />
-          Export CSV
+          {isExporting ? 'Exporting...' : 'Export CSV'}
         </button>
       </div>
 
@@ -97,7 +130,10 @@ export default function Customers() {
               className="block w-full pl-10 sm:text-sm"
               placeholder="Search by name or mobile..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
         </div>
@@ -118,7 +154,7 @@ export default function Customers() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {filteredCustomers.map((customer: Customer) => (
+                    {customers.map((customer: Customer) => (
                       <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors">
                         {editingId === customer.id ? (
                           <>
@@ -166,6 +202,58 @@ export default function Customers() {
             </div>
           </div>
         </div>
+
+        {totalCustomers > 0 && (
+          <div className="mt-6 flex items-center justify-between border-t-2 border-zinc-800 pt-4">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-bold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-bold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">
+                  Showing <span className="font-medium text-white">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-white">{Math.min(page * limit, totalCustomers)}</span> of <span className="font-medium text-white">{totalCustomers}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Previous</span>
+                    &larr;
+                  </button>
+                  <span className="relative inline-flex items-center px-4 py-2 border-y-2 border-zinc-800 bg-zinc-900 text-sm font-medium text-white">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-xl border-2 border-zinc-800 bg-zinc-950 text-sm font-medium text-zinc-400 hover:bg-zinc-800 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Next</span>
+                    &rarr;
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

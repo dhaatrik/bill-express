@@ -298,24 +298,41 @@ app.get('/api/customers/count', (req, res) => {
   });
 
 app.get('/api/customers', (req, res) => {
-    const search = req.query.search as string;
-    // ⚡ Bolt: Use scalar subquery instead of LEFT JOIN + GROUP BY for performance
-    // See .jules/bolt.md for details
+    let page = parseInt(req.query.page as string) || 1;
+    let limit = parseInt(req.query.limit as string) || 50;
+
+    // Security Enhancement: Prevent negative limits/offsets (DoS risk)
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 1;
+    if (limit > 1000) limit = 1000;
+
+    const search = req.query.search as string || '';
+
+    let query = `
+      SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
+      FROM customers c
+    `;
+    let countQuery = 'SELECT COUNT(*) as count FROM customers c';
+    const params: any[] = [];
+
     if (search) {
-      const customers = db.prepare(`
-        SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
-        FROM customers c
-        WHERE c.mobile LIKE ? OR c.name LIKE ?
-        LIMIT 10
-      `).all(`%${search}%`, `%${search}%`);
-      res.json(customers);
-    } else {
-      const customers = db.prepare(`
-        SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
-        FROM customers c
-        ORDER BY c.name ASC
-      `).all();
-      res.json(customers);
+      const whereClause = ' WHERE c.mobile LIKE ? OR c.name LIKE ?';
+      query += whereClause;
+      countQuery += whereClause;
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    query += ' ORDER BY c.name ASC LIMIT ? OFFSET ?';
+
+    try {
+      // ⚡ Bolt: Use scalar subquery instead of LEFT JOIN + GROUP BY for performance
+      // See .jules/bolt.md for details
+      const totalResult = db.prepare(countQuery).get(...params) as { count: number };
+      const customers = db.prepare(query).all(...params, limit, (page - 1) * limit);
+      res.json({ data: customers, total: totalResult.count });
+    } catch (err: any) {
+      logger.error({ err }, 'Operation failed');
+      res.status(500).json({ error: 'An error occurred while processing the request' });
     }
   });
 
