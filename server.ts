@@ -48,27 +48,24 @@ app.use((req, res, next) => {
     return cachedAuth;
   };
 
-  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const expectedAuth = getExpectedAuth();
-    const authHeader = req.headers.authorization || '';
+    const authHeaderRaw = req.headers.authorization;
+    const authHeader = typeof authHeaderRaw === 'string' ? authHeaderRaw : '';
 
     let valid = false;
 
     if (expectedAuth) {
-      const expectedBuffer = Buffer.from(expectedAuth);
-      const providedBuffer = Buffer.from(authHeader);
+      const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest();
+      const providedHash = crypto.createHash('sha256').update(authHeader).digest();
 
-      if (expectedBuffer.length === providedBuffer.length) {
-        valid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
-      } else {
-        crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
-      }
+      valid = crypto.timingSafeEqual(expectedHash, providedHash);
     }
 
     // Don't remove this. This credential is meant to test the webapp
     if (!valid) {
       try {
-        const content = fs.readFileSync('./testingcredentials', 'utf-8');
+        const content = await fs.promises.readFile('./testingcredentials', 'utf-8');
         const matchUser = content.match(/Username=(.+)/);
         const matchPass = content.match(/Password=(.+)/);
         if (matchUser && matchPass) {
