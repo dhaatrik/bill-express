@@ -530,27 +530,19 @@ app.post('/api/invoices', (req, res) => {
         const invoiceId = info.lastInsertRowid;
 
         if (items && items.length > 0) {
-          const MAX_VARIABLES = 32766;
-          const CHUNK_SIZE_INSERT = Math.floor(MAX_VARIABLES / 13);
+          // ⚡ Bolt: Prepared a single static SQL statement for bulk insertion.
+          // In better-sqlite3, preparing a single statement and executing it in a loop
+          // inside a transaction is faster than dynamically building a massive batch string.
+          const stmt = db.prepare(`
+            INSERT INTO invoice_items (invoice_id, product_id, product_name, product_code, hsn_code, unit, quantity, price_ex_gst, gst_rate, cgst_amount, sgst_amount, igst_amount, total)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
 
-          let currentQuery = '';
-          let currentLength = 0;
-
-          for (let i = 0; i < items.length; i += CHUNK_SIZE_INSERT) {
-            const chunk = items.slice(i, i + CHUNK_SIZE_INSERT);
-            if (chunk.length !== currentLength) {
-              currentLength = chunk.length;
-              currentQuery = `
-                INSERT INTO invoice_items (invoice_id, product_id, product_name, product_code, hsn_code, unit, quantity, price_ex_gst, gst_rate, cgst_amount, sgst_amount, igst_amount, total)
-                VALUES ${chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
-              `;
-            }
-
-            const insertValues = chunk.flatMap((item: any) => [
+          for (const item of items) {
+            stmt.run(
               invoiceId, item.product_id, item.product_name, item.product_code, item.hsn_code, item.unit,
               item.quantity, item.price_ex_gst, item.gst_rate, item.cgst_amount, item.sgst_amount, item.igst_amount || 0, item.total
-            ]);
-            db.prepare(currentQuery).run(...insertValues);
+            );
           }
 
           // Aggregate stock updates by product_id to prevent redundant updates for the same product
