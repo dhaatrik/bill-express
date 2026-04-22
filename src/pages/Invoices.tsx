@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -15,14 +15,7 @@ export default function Invoices() {
   const [dateFilter, setDateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchInvoices();
-    }, 300); // Debounce fetch on search
-    return () => clearTimeout(timer);
-  }, [page, limit, search, dateFilter, typeFilter]);
-
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -43,9 +36,16 @@ export default function Invoices() {
     } catch (err) {
       console.error('Failed to fetch invoices', err);
     }
-  };
+  }, [page, limit, search, dateFilter, typeFilter]);
 
-  const handleCancel = async (id: number) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInvoices();
+    }, 300); // Debounce fetch on search
+    return () => clearTimeout(timer);
+  }, [fetchInvoices]);
+
+  const handleCancel = useCallback(async (id: number) => {
     if (confirm('Are you sure you want to void this invoice? This will restore stock and mark it as cancelled.')) {
       try {
         await apiFetch(`/api/invoices/${id}/cancel`, { method: 'PUT' });
@@ -54,9 +54,9 @@ export default function Invoices() {
         alert('Failed to cancel invoice');
       }
     }
-  };
+  }, [fetchInvoices]);
 
-  const handlePayment = async (id: number, currentAmount: number, total: number) => {
+  const handlePayment = useCallback(async (id: number, currentAmount: number, total: number) => {
     const amount = prompt(`Enter amount paid (Total: ₹${total}, Current: ₹${currentAmount}):`, currentAmount.toString());
     if (amount !== null) {
       const parsedAmount = parseFloat(amount);
@@ -74,7 +74,7 @@ export default function Invoices() {
         }
       }
     }
-  };
+  }, [fetchInvoices]);
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -119,6 +119,62 @@ export default function Invoices() {
       setIsExporting(false);
     }
   };
+
+  // ⚡ Bolt: Memoize the 50 table rows to prevent re-rendering them on every single keystroke in the search input
+  const renderedInvoices = useMemo(() => {
+    return invoices.map((invoice: Invoice) => (
+      <tr key={invoice.id} className="hover:bg-zinc-800/50 transition-colors">
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{invoice.invoice_number}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
+          {format(new Date(invoice.date), 'dd MMM yyyy')}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-300">
+          {invoice.customer_name || 'Cash Sale'}
+          {invoice.customer_mobile && <span className="block text-xs text-zinc-500 mt-1">{invoice.customer_mobile}</span>}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
+          <div className="flex flex-col gap-1">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700 capitalize w-fit">
+              {invoice.type}
+            </span>
+            {invoice.status === 'cancelled' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20 capitalize w-fit">
+                Void
+              </span>
+            )}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">
+          <span className={invoice.status === 'cancelled' ? 'line-through text-zinc-500' : ''}>
+            ₹{invoice.grand_total.toFixed(2)}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+          <button
+            onClick={() => handlePayment(invoice.id, invoice.amount_paid, invoice.grand_total)}
+            disabled={invoice.status === 'cancelled'}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border transition-colors ${
+              invoice.payment_status === 'Paid' ? 'bg-lime-400/10 text-lime-400 border-lime-400/20 hover:bg-lime-400/20' :
+              invoice.payment_status === 'Partial' ? 'bg-amber-400/10 text-amber-400 border-amber-400/20 hover:bg-amber-400/20' :
+              'bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/20'
+            } ${invoice.status === 'cancelled' ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {invoice.payment_status} (₹{invoice.amount_paid?.toFixed(2) || '0.00'})
+          </button>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <Link to={`/invoices/${invoice.id}`} className="text-cyan-400 hover:text-cyan-300 mr-4 inline-flex items-center transition-colors" aria-label={`View invoice ${invoice.invoice_number}`} title="View invoice details">
+            <Eye className="h-5 w-5" />
+          </Link>
+          {invoice.status === 'active' && (
+            <button onClick={() => handleCancel(invoice.id)} className="text-rose-500 hover:text-rose-400 inline-flex items-center transition-colors" title="Void Invoice" aria-label="Void Invoice">
+              <XCircle className="h-5 w-5" />
+            </button>
+          )}
+        </td>
+      </tr>
+    ));
+  }, [invoices, handlePayment, handleCancel]);
 
   return (
     <div className="space-y-6">
@@ -198,58 +254,7 @@ export default function Invoices() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {invoices.map((invoice: Invoice) => (
-                      <tr key={invoice.id} className="hover:bg-zinc-800/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{invoice.invoice_number}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
-                          {format(new Date(invoice.date), 'dd MMM yyyy')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-300">
-                          {invoice.customer_name || 'Cash Sale'}
-                          {invoice.customer_mobile && <span className="block text-xs text-zinc-500 mt-1">{invoice.customer_mobile}</span>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
-                          <div className="flex flex-col gap-1">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700 capitalize w-fit">
-                              {invoice.type}
-                            </span>
-                            {invoice.status === 'cancelled' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20 capitalize w-fit">
-                                Void
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">
-                          <span className={invoice.status === 'cancelled' ? 'line-through text-zinc-500' : ''}>
-                            ₹{invoice.grand_total.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                          <button 
-                            onClick={() => handlePayment(invoice.id, invoice.amount_paid, invoice.grand_total)}
-                            disabled={invoice.status === 'cancelled'}
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border transition-colors ${
-                              invoice.payment_status === 'Paid' ? 'bg-lime-400/10 text-lime-400 border-lime-400/20 hover:bg-lime-400/20' :
-                              invoice.payment_status === 'Partial' ? 'bg-amber-400/10 text-amber-400 border-amber-400/20 hover:bg-amber-400/20' :
-                              'bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/20'
-                            } ${invoice.status === 'cancelled' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            {invoice.payment_status} (₹{invoice.amount_paid?.toFixed(2) || '0.00'})
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link to={`/invoices/${invoice.id}`} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors mr-3" aria-label={`View invoice ${invoice.invoice_number}`} title="View invoice">
-                            <Eye className="h-5 w-5" />
-                          </Link>
-                          {invoice.status === 'active' && (
-                            <button onClick={() => handleCancel(invoice.id)} className="text-rose-500 hover:text-rose-400 inline-flex items-center transition-colors" title="Void Invoice" aria-label="Void Invoice">
-                              <XCircle className="h-5 w-5" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {renderedInvoices}
                   </tbody>
                 </table>
               </div>
