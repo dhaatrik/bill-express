@@ -260,7 +260,7 @@ app.get('/api/products/:id/transactions', (req, res) => {
 
 app.post('/api/products/:id/stock-adjustment', (req, res) => {
     const { type, quantity, reason } = req.body;
-    if (typeof type !== 'string' || typeof quantity !== 'number' || (reason !== undefined && typeof reason !== 'string')) {
+    if (typeof type !== 'string' || typeof quantity !== 'number' || !Number.isFinite(quantity) || (reason !== undefined && typeof reason !== 'string')) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
 

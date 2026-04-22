@@ -90,4 +90,28 @@ describe('Inventory API', () => {
     const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(productId) as { stock: number };
     expect(product.stock).toBe(95);
   });
+
+  it('should reject NaN and Infinity for quantity', async () => {
+    const nanResponse = await request(app)
+      .post(`/api/products/${productId}/stock-adjustment`)
+      .set('Authorization', authHeader)
+      .send({
+        type: 'restock',
+        quantity: NaN,
+        reason: 'NaN value'
+      });
+
+    expect(nanResponse.status).toBe(400);
+
+    const infinityResponse = await request(app)
+      .post(`/api/products/${productId}/stock-adjustment`)
+      .set('Authorization', authHeader)
+      .send({
+        type: 'restock',
+        quantity: Infinity,
+        reason: 'Infinity value'
+      });
+
+    expect(infinityResponse.status).toBe(400);
+  });
 });
