@@ -170,13 +170,12 @@ const sampleProducts = [
 const insertMany = db.transaction((products: { code: string; name: string; category: string; unit: string; price: number; gst: number; hsn: string; }[]) => {
   if (products.length === 0) return;
 
-  const CHUNK_SIZE = 100;
-  for (let i = 0; i < products.length; i += CHUNK_SIZE) {
-    const chunk = products.slice(i, i + CHUNK_SIZE);
-    const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, 100)').join(', ');
-    const sql = `INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES ${placeholders}`;
-    const params = chunk.flatMap(p => [p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn]);
-    db.prepare(sql).run(...params);
+  // ⚡ Bolt: Prepared a single static SQL statement for bulk insertion.
+  // In better-sqlite3, preparing a single statement and executing it in a loop
+  // inside a transaction is faster than dynamically building a massive batch string.
+  const stmt = db.prepare(`INSERT OR IGNORE INTO products (code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock) VALUES (?, ?, ?, ?, ?, ?, ?, 100)`);
+  for (const p of products) {
+    stmt.run(p.code, p.name, p.category, p.unit, p.price, p.gst, p.hsn);
   }
 });
 

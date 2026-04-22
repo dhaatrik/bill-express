@@ -4,3 +4,6 @@
 ## 2026-04-20 - Server-side pagination and large dataset frontend performance
 **Learning:** Returning all items in an unpaginated manner from list endpoints (like `/api/customers`) results in slow initial load times and poor rendering performance for large tables on the frontend, especially since React renders all rows initially. Client-side filtering via `useMemo` isn't a long-term solution for scaling datasets.
 **Action:** Always implement explicit limit and offset pagination on list endpoints on the server. On the frontend, utilize the returned total count to implement server-side pagination UI instead of client-side filtering. Ensure `handleExportCSV` is refactored to fetch the full set by passing a high `limit`.
+## 2026-04-21 - Optimize bulk insertions in SQLite
+**Learning:** In `better-sqlite3` (in-process SQLite), batching multiple database operations by dynamically constructing a single query with variable placeholders (e.g., `INSERT INTO ... VALUES (?, ...), (?, ...), ...`) is an anti-pattern. Because there is no network overhead, the fastest and recommended approach is to prepare a single constant SQL statement and execute it in a loop inside a `db.transaction()`.
+**Action:** Replace dynamically constructed batch queries with a single prepared statement executed in a loop over the batch array within a transaction block.
