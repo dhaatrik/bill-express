@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Edit2, Save, X, Download } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Customer } from '../types.js';
@@ -13,7 +13,7 @@ export default function Customers() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<Customer>>({});
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -32,22 +32,21 @@ export default function Customers() {
     } catch (err) {
       console.error('Failed to fetch customers', err);
     }
-  };
+  }, [page, limit, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchCustomers();
     }, 300); // Debounce fetch on search
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, search]);
+  }, [fetchCustomers]);
 
-  const handleEdit = (customer: Customer) => {
+  const handleEdit = useCallback((customer: Customer) => {
     setEditingId(customer.id);
     setEditForm(customer);
-  };
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     try {
       await apiFetch(`/api/customers/${editingId}`, {
         method: 'PUT',
@@ -60,7 +59,7 @@ export default function Customers() {
       console.error(err);
       alert('Failed to update customer');
     }
-  };
+  }, [editingId, editForm, fetchCustomers]);
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -103,6 +102,52 @@ export default function Customers() {
   };
 
   const totalPages = Math.ceil(totalCustomers / limit);
+
+  // ⚡ Bolt: Memoize the 50 table rows to prevent re-rendering them on every single keystroke in the search input
+  const renderedCustomers = useMemo(() => {
+    return customers.map((customer: Customer) => (
+      <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors">
+        {editingId === customer.id ? (
+          <>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full sm:text-sm" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <input type="text" value={editForm.mobile} onChange={e => setEditForm({...editForm, mobile: e.target.value})} className="w-full sm:text-sm" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full sm:text-sm mb-1" placeholder="Address" />
+              <input type="text" value={editForm.state} onChange={e => setEditForm({...editForm, state: e.target.value})} className="w-full sm:text-sm" placeholder="State" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <input type="text" value={editForm.gstin} onChange={e => setEditForm({...editForm, gstin: e.target.value})} className="w-full sm:text-sm" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">₹{customer.lifetime_value.toFixed(2)}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onClick={handleSave} className="text-lime-400 hover:text-lime-300 mr-3" aria-label="Save changes" title="Save changes"><Save className="h-5 w-5" /></button>
+              <button onClick={() => setEditingId(null)} className="text-zinc-400 hover:text-zinc-300" aria-label="Cancel editing" title="Cancel editing"><X className="h-5 w-5" /></button>
+            </td>
+          </>
+        ) : (
+          <>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{customer.name}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">{customer.mobile || '-'}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
+              {customer.address || '-'}
+              {customer.state && <span className="block text-xs text-zinc-500 mt-1">{customer.state}</span>}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">{customer.gstin || '-'}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">₹{customer.lifetime_value.toFixed(2)}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onClick={() => handleEdit(customer)} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors" aria-label="Edit customer" title="Edit customer">
+                <Edit2 className="h-5 w-5" />
+              </button>
+            </td>
+          </>
+        )}
+      </tr>
+    ));
+  }, [customers, editingId, editForm, handleEdit, handleSave]);
 
   return (
     <div className="space-y-6">
@@ -154,48 +199,7 @@ export default function Customers() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {customers.map((customer: Customer) => (
-                      <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors">
-                        {editingId === customer.id ? (
-                          <>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full sm:text-sm" />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input type="text" value={editForm.mobile} onChange={e => setEditForm({...editForm, mobile: e.target.value})} className="w-full sm:text-sm" />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full sm:text-sm mb-1" placeholder="Address" />
-                              <input type="text" value={editForm.state} onChange={e => setEditForm({...editForm, state: e.target.value})} className="w-full sm:text-sm" placeholder="State" />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input type="text" value={editForm.gstin} onChange={e => setEditForm({...editForm, gstin: e.target.value})} className="w-full sm:text-sm" />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">₹{customer.lifetime_value.toFixed(2)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button onClick={handleSave} className="text-lime-400 hover:text-lime-300 mr-3" aria-label="Save changes" title="Save changes"><Save className="h-5 w-5" /></button>
-                              <button onClick={() => setEditingId(null)} className="text-zinc-400 hover:text-zinc-300" aria-label="Cancel editing" title="Cancel editing"><X className="h-5 w-5" /></button>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">{customer.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">{customer.mobile || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">
-                              {customer.address || '-'}
-                              {customer.state && <span className="block text-xs text-zinc-500 mt-1">{customer.state}</span>}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-400">{customer.gstin || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-lime-400 text-right font-bold">₹{customer.lifetime_value.toFixed(2)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button onClick={() => handleEdit(customer)} className="text-cyan-400 hover:text-cyan-300 inline-flex items-center transition-colors" aria-label="Edit customer" title="Edit customer">
-                                <Edit2 className="h-5 w-5" />
-                              </button>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
+                    {renderedCustomers}
                   </tbody>
                 </table>
               </div>
