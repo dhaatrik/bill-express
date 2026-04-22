@@ -357,7 +357,7 @@ export default function NewBill() {
                         )}
                         <td className="px-4 py-4 text-sm text-lime-400 text-right font-black">₹{item.total.toFixed(2)}</td>
                         <td className="px-4 py-4 text-right">
-                          <button onClick={() => removeItem(item.product_id)} className="text-rose-500 hover:text-rose-400 transition-colors p-2 hover:bg-rose-500/10 rounded-lg" aria-label="Remove item" title="Remove item">
+                          <button onClick={() => removeItem(item.product_id)} className="text-rose-500 hover:text-rose-400 transition-colors p-2 hover:bg-rose-500/10 rounded-lg" aria-label={`Remove ${item.product_name} from bill`} title={`Remove ${item.product_name}`}>
                             <Trash2 className="h-5 w-5" />
                           </button>
                         </td>
