@@ -136,6 +136,7 @@ app.use((req, res, next) => {
   });
 
 const isValidAmount = (n: any) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+const isValidString = (s: any, maxLength: number = 255) => typeof s === 'string' && s.length <= maxLength;
 
   // Products
 app.get('/api/products', (req, res) => {
@@ -147,7 +148,7 @@ app.get('/api/products', (req, res) => {
     if (limit < 1) limit = 1;
     if (limit > 1000) limit = 1000;
 
-    const search = req.query.search as string || '';
+    const search = (req.query.search as string || '').slice(0, 100);
     const category = req.query.category as string || 'All';
     const sort = req.query.sort as string || 'name_asc';
 
@@ -192,9 +193,9 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
-    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
-        typeof unit !== 'string' || !isValidAmount(price_ex_gst) || !isValidAmount(gst_rate) ||
-        typeof hsn_code !== 'string' || (stock !== undefined && !isValidAmount(stock))) {
+    if (!isValidString(code) || !isValidString(name) || !isValidString(category) ||
+        !isValidString(unit) || !isValidAmount(price_ex_gst) || !isValidAmount(gst_rate) ||
+        !isValidString(hsn_code) || (stock !== undefined && !isValidAmount(stock))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
     try {
@@ -215,9 +216,9 @@ app.post('/api/products', (req, res) => {
 
 app.put('/api/products/:id', (req, res) => {
     const { code, name, category, unit, price_ex_gst, gst_rate, hsn_code, stock } = req.body;
-    if (typeof code !== 'string' || typeof name !== 'string' || typeof category !== 'string' ||
-        typeof unit !== 'string' || !isValidAmount(price_ex_gst) || !isValidAmount(gst_rate) ||
-        typeof hsn_code !== 'string' || (stock !== undefined && !isValidAmount(stock))) {
+    if (!isValidString(code) || !isValidString(name) || !isValidString(category) ||
+        !isValidString(unit) || !isValidAmount(price_ex_gst) || !isValidAmount(gst_rate) ||
+        !isValidString(hsn_code) || (stock !== undefined && !isValidAmount(stock))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
     try {
@@ -260,7 +261,7 @@ app.get('/api/products/:id/transactions', (req, res) => {
 
 app.post('/api/products/:id/stock-adjustment', (req, res) => {
     const { type, quantity, reason } = req.body;
-    if (typeof type !== 'string' || typeof quantity !== 'number' || !Number.isFinite(quantity) || (reason !== undefined && typeof reason !== 'string')) {
+    if (!isValidString(type) || typeof quantity !== 'number' || (reason !== undefined && !isValidString(reason))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
 
@@ -306,7 +307,7 @@ app.get('/api/customers', (req, res) => {
     if (limit < 1) limit = 1;
     if (limit > 1000) limit = 1000;
 
-    const search = req.query.search as string || '';
+    const search = (req.query.search as string || '').slice(0, 100);
 
     let query = `
       SELECT c.*, (SELECT COALESCE(SUM(i.grand_total), 0) FROM invoices i WHERE i.customer_id = c.id AND i.status = 'active') as lifetime_value
@@ -339,11 +340,11 @@ app.get('/api/customers', (req, res) => {
 app.post('/api/customers', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
     if (
-      typeof name !== 'string' ||
-      (mobile !== undefined && typeof mobile !== 'string') ||
-      (address !== undefined && typeof address !== 'string') ||
-      (gstin !== undefined && typeof gstin !== 'string') ||
-      (state !== undefined && typeof state !== 'string')
+      !isValidString(name) ||
+      (mobile !== undefined && !isValidString(mobile)) ||
+      (address !== undefined && !isValidString(address, 1000)) ||
+      (gstin !== undefined && !isValidString(gstin)) ||
+      (state !== undefined && !isValidString(state))
     ) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
@@ -363,11 +364,11 @@ app.post('/api/customers', (req, res) => {
 app.put('/api/customers/:id', (req, res) => {
     const { name, mobile, address, gstin, state } = req.body;
     if (
-      (name !== undefined && typeof name !== 'string') ||
-      (mobile !== undefined && typeof mobile !== 'string') ||
-      (address !== undefined && typeof address !== 'string') ||
-      (gstin !== undefined && typeof gstin !== 'string') ||
-      (state !== undefined && typeof state !== 'string')
+      (name !== undefined && !isValidString(name)) ||
+      (mobile !== undefined && !isValidString(mobile)) ||
+      (address !== undefined && !isValidString(address, 1000)) ||
+      (gstin !== undefined && !isValidString(gstin)) ||
+      (state !== undefined && !isValidString(state))
     ) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
@@ -395,7 +396,7 @@ app.get('/api/invoices', (req, res) => {
     if (limit < 1) limit = 1;
     if (limit > 1000) limit = 1000;
 
-    const search = req.query.search as string || '';
+    const search = (req.query.search as string || '').slice(0, 100);
     const dateFilter = req.query.dateFilter as string || 'all';
     const typeFilter = req.query.typeFilter as string || 'all';
 
@@ -472,7 +473,7 @@ app.post('/api/invoices', (req, res) => {
     } = req.body;
 
     if (
-      typeof type !== 'string' ||
+      !isValidString(type) ||
       !isValidAmount(subtotal) ||
       !isValidAmount(discount) ||
       !isValidAmount(cgst_total) ||
@@ -480,22 +481,22 @@ app.post('/api/invoices', (req, res) => {
       !isValidAmount(grand_total) ||
       (igst_total !== undefined && !isValidAmount(igst_total)) ||
       (customer_id !== undefined && customer_id !== null && typeof customer_id !== 'number') ||
-      (customer_name !== undefined && typeof customer_name !== 'string') ||
-      (customer_mobile !== undefined && typeof customer_mobile !== 'string') ||
-      (customer_address !== undefined && typeof customer_address !== 'string') ||
-      (customer_gstin !== undefined && typeof customer_gstin !== 'string') ||
-      (customer_state !== undefined && typeof customer_state !== 'string') ||
-      (payment_status !== undefined && typeof payment_status !== 'string') ||
+      (customer_name !== undefined && !isValidString(customer_name)) ||
+      (customer_mobile !== undefined && !isValidString(customer_mobile)) ||
+      (customer_address !== undefined && !isValidString(customer_address, 1000)) ||
+      (customer_gstin !== undefined && !isValidString(customer_gstin)) ||
+      (customer_state !== undefined && !isValidString(customer_state)) ||
+      (payment_status !== undefined && !isValidString(payment_status)) ||
       (amount_paid !== undefined && !isValidAmount(amount_paid)) ||
       !Array.isArray(items) ||
       !items.every(
         (item: any) =>
           item && typeof item === 'object' &&
           (item.product_id === undefined || item.product_id === null || typeof item.product_id === 'number') &&
-          typeof item.product_name === 'string' &&
-          typeof item.product_code === 'string' &&
-          typeof item.hsn_code === 'string' &&
-          typeof item.unit === 'string' &&
+          isValidString(item.product_name) &&
+          isValidString(item.product_code) &&
+          isValidString(item.hsn_code) &&
+          isValidString(item.unit) &&
           isValidAmount(item.quantity) &&
           isValidAmount(item.price_ex_gst) &&
           isValidAmount(item.gst_rate) &&
@@ -612,7 +613,7 @@ app.put('/api/invoices/:id/cancel', (req, res) => {
 app.put('/api/invoices/:id/payment', (req, res) => {
     const { payment_status, amount_paid } = req.body;
     if (
-      (payment_status !== undefined && typeof payment_status !== 'string') ||
+      (payment_status !== undefined && !isValidString(payment_status)) ||
       (amount_paid !== undefined && !isValidAmount(amount_paid))
     ) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
@@ -636,9 +637,9 @@ app.get('/api/settings', (req, res) => {
 
 app.put('/api/settings', (req, res) => {
     const { store_name, address, phone, gstin, state_code, logo_url, low_stock_threshold } = req.body;
-    if (typeof store_name !== 'string' || typeof address !== 'string' || typeof phone !== 'string' ||
-        typeof gstin !== 'string' || typeof state_code !== 'string' ||
-        (logo_url !== undefined && logo_url !== null && typeof logo_url !== 'string') ||
+    if (!isValidString(store_name) || !isValidString(address, 1000) || !isValidString(phone) ||
+        !isValidString(gstin) || !isValidString(state_code) ||
+        (logo_url !== undefined && logo_url !== null && !isValidString(logo_url, 2048)) ||
         (typeof logo_url === 'string' && logo_url !== '' && !/^https?:\/\//i.test(logo_url) && !logo_url.startsWith('/')) ||
         (low_stock_threshold !== undefined && typeof low_stock_threshold !== 'number')) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });

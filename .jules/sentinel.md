@@ -3,6 +3,10 @@
 **Learning:** Security comparisons shouldn't be executed directly on user inputs because varying string lengths could cause timing attacks or logic errors. Also, synchronous file system calls inside unauthenticated endpoints can be exploited for DoS.
 **Prevention:** Always coerce headers explicitly using typeof checks (e.g., `typeof req.headers.authorization === 'string'`), hash inputs before timing-safe comparison if their lengths might differ or are variable, and use asynchronous functions (`fs.promises.readFile`) within middleware routes to prevent blocking the event loop.
 
+## 2026-04-22 - Fix Unbounded String Length DoS
+**Vulnerability:** API endpoints did not enforce maximum string lengths on `req.body` inputs or `req.query` search strings, leaving the application vulnerable to Denial of Service (DoS) attacks via memory exhaustion and excessive database processing when receiving massive string payloads.
+**Learning:** Checking `typeof s === 'string'` is insufficient for security; the length must also be bounded. Unbounded `req.query.search` strings passed into `LIKE` clauses can cause severe CPU spikes in SQLite.
+**Prevention:** Implement a reusable `isValidString(s, maxLength = 255)` helper and apply it to all string inputs. Always `slice()` or validate the length of `req.query` parameters before using them in database queries or processing.
 ## 2026-04-21 - Prevent Invalid Numeric Data (NaN/Infinity) Corruption
 **Vulnerability:** The application used `typeof === 'number'` to validate numeric inputs (like `quantity`), which inadvertently allows `NaN` and `Infinity`. This could lead to data integrity issues or corruption when these values are saved to the SQLite database.
 **Learning:** In JavaScript, `NaN` and `Infinity` are considered numbers by the `typeof` operator. Relying solely on `typeof === 'number'` is insufficient for ensuring that data is actually a valid, finite number suitable for database storage and calculations.
