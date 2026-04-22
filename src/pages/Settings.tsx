@@ -49,8 +49,9 @@ export default function Settings() {
       <div className="bg-zinc-900 border-2 border-zinc-800 rounded-2xl p-8">
         <form onSubmit={handleSave} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Store Name</label>
+            <label htmlFor="store_name" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Store Name</label>
             <input
+              id="store_name"
               type="text"
               value={settings.store_name}
               onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
@@ -61,8 +62,9 @@ export default function Settings() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Address</label>
+            <label htmlFor="address" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Address</label>
             <textarea
+              id="address"
               value={settings.address}
               onChange={(e) => setSettings({ ...settings, address: e.target.value })}
               rows={3}
@@ -74,8 +76,9 @@ export default function Settings() {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Phone</label>
+              <label htmlFor="phone" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Phone</label>
               <input
+                id="phone"
                 type="text"
                 value={settings.phone}
                 onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
@@ -85,8 +88,9 @@ export default function Settings() {
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">GSTIN</label>
+              <label htmlFor="gstin" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">GSTIN</label>
               <input
+                id="gstin"
                 type="text"
                 value={settings.gstin}
                 onChange={(e) => setSettings({ ...settings, gstin: e.target.value })}
@@ -99,8 +103,9 @@ export default function Settings() {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">State Code</label>
+              <label htmlFor="state_code" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">State Code</label>
               <input
+                id="state_code"
                 type="text"
                 value={settings.state_code}
                 onChange={(e) => setSettings({ ...settings, state_code: e.target.value })}
@@ -111,8 +116,9 @@ export default function Settings() {
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Low Stock Threshold</label>
+              <label htmlFor="low_stock_threshold" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Low Stock Threshold</label>
               <input
+                id="low_stock_threshold"
                 type="number"
                 value={settings.low_stock_threshold}
                 onChange={(e) => setSettings({ ...settings, low_stock_threshold: parseInt(e.target.value) || 0 })}
@@ -126,8 +132,9 @@ export default function Settings() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Logo URL (Optional)</label>
+            <label htmlFor="logo_url" className="block text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">Logo URL (Optional)</label>
             <input
+              id="logo_url"
               type="text"
               value={settings.logo_url || ''}
               onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
