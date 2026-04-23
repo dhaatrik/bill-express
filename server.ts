@@ -261,7 +261,7 @@ app.get('/api/products/:id/transactions', (req, res) => {
 
 app.post('/api/products/:id/stock-adjustment', (req, res) => {
     const { type, quantity, reason } = req.body;
-    if (!isValidString(type) || typeof quantity !== 'number' || (reason !== undefined && !isValidString(reason))) {
+    if (!isValidString(type) || !Number.isFinite(quantity) || (reason !== undefined && !isValidString(reason))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
 
@@ -480,7 +480,7 @@ app.post('/api/invoices', (req, res) => {
       !isValidAmount(sgst_total) ||
       !isValidAmount(grand_total) ||
       (igst_total !== undefined && !isValidAmount(igst_total)) ||
-      (customer_id !== undefined && customer_id !== null && typeof customer_id !== 'number') ||
+      (customer_id !== undefined && customer_id !== null && !Number.isFinite(customer_id)) ||
       (customer_name !== undefined && !isValidString(customer_name)) ||
       (customer_mobile !== undefined && !isValidString(customer_mobile)) ||
       (customer_address !== undefined && !isValidString(customer_address, 1000)) ||
@@ -492,7 +492,7 @@ app.post('/api/invoices', (req, res) => {
       !items.every(
         (item: any) =>
           item && typeof item === 'object' &&
-          (item.product_id === undefined || item.product_id === null || typeof item.product_id === 'number') &&
+          (item.product_id === undefined || item.product_id === null || Number.isFinite(item.product_id)) &&
           isValidString(item.product_name) &&
           isValidString(item.product_code) &&
           isValidString(item.hsn_code) &&
@@ -641,7 +641,7 @@ app.put('/api/settings', (req, res) => {
         !isValidString(gstin) || !isValidString(state_code) ||
         (logo_url !== undefined && logo_url !== null && !isValidString(logo_url, 2048)) ||
         (typeof logo_url === 'string' && logo_url !== '' && !/^https?:\/\//i.test(logo_url) && !logo_url.startsWith('/')) ||
-        (low_stock_threshold !== undefined && typeof low_stock_threshold !== 'number')) {
+        (low_stock_threshold !== undefined && !Number.isFinite(low_stock_threshold))) {
       return res.status(400).json({ error: 'Invalid or missing required fields' });
     }
     try {
