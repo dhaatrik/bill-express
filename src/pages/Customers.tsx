@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, Edit2, Save, X, Download } from 'lucide-react';
 import { apiFetch } from '../utils/api.js';
 import { Customer } from '../types.js';
@@ -34,6 +34,11 @@ export default function Customers() {
     }
   }, [page, limit, search]);
 
+  const fetchCustomersRef = useRef(fetchCustomers);
+  useEffect(() => {
+    fetchCustomersRef.current = fetchCustomers;
+  }, [fetchCustomers]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchCustomers();
@@ -54,12 +59,12 @@ export default function Customers() {
         body: JSON.stringify(editForm)
       });
       setEditingId(null);
-      fetchCustomers();
+      fetchCustomersRef.current();
     } catch (err) {
       console.error(err);
       alert('Failed to update customer');
     }
-  }, [editingId, editForm, fetchCustomers]);
+  }, [editingId, editForm]);
 
   const [isExporting, setIsExporting] = useState(false);
 

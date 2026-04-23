@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Search, Download, XCircle, Receipt } from 'lucide-react';
 import { format } from 'date-fns';
@@ -38,6 +38,11 @@ export default function Invoices() {
     }
   }, [page, limit, search, dateFilter, typeFilter]);
 
+  const fetchInvoicesRef = useRef(fetchInvoices);
+  useEffect(() => {
+    fetchInvoicesRef.current = fetchInvoices;
+  }, [fetchInvoices]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchInvoices();
@@ -49,12 +54,12 @@ export default function Invoices() {
     if (confirm('Are you sure you want to void this invoice? This will restore stock and mark it as cancelled.')) {
       try {
         await apiFetch(`/api/invoices/${id}/cancel`, { method: 'PUT' });
-        fetchInvoices();
+        fetchInvoicesRef.current();
       } catch (err) {
         alert('Failed to cancel invoice');
       }
     }
-  }, [fetchInvoices]);
+  }, []);
 
   const handlePayment = useCallback(async (id: number, currentAmount: number, total: number) => {
     const amount = prompt(`Enter amount paid (Total: ₹${total}, Current: ₹${currentAmount}):`, currentAmount.toString());
@@ -68,13 +73,13 @@ export default function Invoices() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ payment_status: status, amount_paid: parsedAmount })
           });
-          fetchInvoices();
+          fetchInvoicesRef.current();
         } catch (err) {
           alert('Failed to update payment');
         }
       }
     }
-  }, [fetchInvoices]);
+  }, []);
 
   const [isExporting, setIsExporting] = useState(false);
 
