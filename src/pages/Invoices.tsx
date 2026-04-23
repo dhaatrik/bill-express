@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Search, Download, XCircle } from 'lucide-react';
+import { Eye, Search, Download, XCircle, Receipt } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiFetch } from '../utils/api.js';
 import { Invoice } from '../types.js';
@@ -167,7 +167,7 @@ export default function Invoices() {
             <Eye className="h-5 w-5" />
           </Link>
           {invoice.status === 'active' && (
-            <button onClick={() => handleCancel(invoice.id)} className="text-rose-500 hover:text-rose-400 inline-flex items-center transition-colors" title="Void Invoice" aria-label="Void Invoice">
+            <button onClick={() => handleCancel(invoice.id)} className="text-rose-500 hover:text-rose-400 inline-flex items-center transition-colors" title={`Void Invoice ${invoice.invoice_number}`} aria-label={`Void Invoice ${invoice.invoice_number}`}>
               <XCircle className="h-5 w-5" />
             </button>
           )}
@@ -254,7 +254,54 @@ export default function Invoices() {
                     </tr>
                   </thead>
                   <tbody className="bg-zinc-900 divide-y divide-zinc-800">
-                    {renderedInvoices}
+                    {invoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            {(search !== '' || dateFilter !== 'all' || typeFilter !== 'all') ? (
+                              <>
+                                <div className="bg-zinc-800/50 p-4 rounded-full mb-4">
+                                  <Search className="h-8 w-8 text-zinc-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white mb-2">No matching invoices</h3>
+                                <p className="text-zinc-400 text-sm mb-6 max-w-sm mx-auto">
+                                  We couldn't find any invoices matching your current search and filter criteria.
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    setSearch('');
+                                    setDateFilter('all');
+                                    setTypeFilter('all');
+                                    setPage(1);
+                                  }}
+                                  className="inline-flex items-center px-4 py-2 border-2 border-zinc-800 text-sm font-bold rounded-xl text-zinc-300 bg-zinc-950 hover:bg-zinc-800 transition-colors"
+                                >
+                                  Clear Filters
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <div className="bg-zinc-800/50 p-4 rounded-full mb-4">
+                                  <Receipt className="h-8 w-8 text-zinc-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white mb-2">No invoices yet</h3>
+                                <p className="text-zinc-400 text-sm mb-6 max-w-sm mx-auto">
+                                  Get started by creating your first bill.
+                                </p>
+                                <Link
+                                  to="/new-bill"
+                                  className="inline-flex items-center px-4 py-2 border-2 border-zinc-950 text-sm font-bold rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-zinc-950 bg-lime-400 hover:bg-lime-300 hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+                                >
+                                  Create New Bill
+                                </Link>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      renderedInvoices
+                    )}
                   </tbody>
                 </table>
               </div>
